@@ -8,6 +8,48 @@ function minutesOf(heure) {
   return (h || 0) * 60 + (m || 0);
 }
 
+// Place les événements qui se chevauchent (même heure ou proches) côte à côte plutôt que
+// superposés — sinon un seul restait visible et les autres étaient cachés dessous.
+function layoutEvents(events, totalHeight) {
+  const h = ROW_HEIGHT - 4;
+  const withTop = events
+    .map((e) => ({ ...e, top: (minutesOf(e.heure) / (24 * 60)) * totalHeight }))
+    .sort((a, b) => a.top - b.top);
+
+  const clusters = [];
+  let current = [];
+  let clusterEnd = -Infinity;
+  for (const e of withTop) {
+    if (current.length === 0 || e.top < clusterEnd) {
+      current.push(e);
+      clusterEnd = Math.max(clusterEnd, e.top + h);
+    } else {
+      clusters.push(current);
+      current = [e];
+      clusterEnd = e.top + h;
+    }
+  }
+  if (current.length) clusters.push(current);
+
+  const result = [];
+  for (const cluster of clusters) {
+    const colEnds = []; // fin (top + h) du dernier événement placé dans chaque colonne
+    const withCol = cluster.map((e) => {
+      let col = colEnds.findIndex((end) => e.top >= end);
+      if (col === -1) {
+        col = colEnds.length;
+        colEnds.push(e.top + h);
+      } else {
+        colEnds[col] = e.top + h;
+      }
+      return { ...e, col };
+    });
+    const numCols = colEnds.length;
+    for (const e of withCol) result.push({ ...e, numCols });
+  }
+  return result;
+}
+
 export default function WeekGrid({ days, evenements }) {
   const totalHeight = HOURS.length * ROW_HEIGHT;
 
@@ -45,18 +87,23 @@ export default function WeekGrid({ days, evenements }) {
                     style={{ top: h * ROW_HEIGHT }}
                   />
                 ))}
-                {parJour[i].map((e) => {
-                  const top = (minutesOf(e.heure) / (24 * 60)) * totalHeight;
+                {layoutEvents(parJour[i], totalHeight).map((e) => {
                   const isAller = e.type === "aller";
+                  const widthPct = 100 / e.numCols;
                   return (
                     <Link
                       key={`${e.reservation_id}_${e.type}`}
                       href={`/reservations/${e.reservation_id}`}
                       title={`${e.heure || "?"} · ${e.client || "Client"} · ${e.vehicule || ""}`}
-                      className={`absolute left-0.5 right-0.5 rounded px-1 py-0.5 text-[10px] leading-tight text-white overflow-hidden hover:opacity-90 ${
+                      className={`absolute rounded px-1 py-0.5 text-[10px] leading-tight text-white overflow-hidden hover:opacity-90 hover:z-10 ${
                         isAller ? "bg-brand" : "bg-ink"
                       }`}
-                      style={{ top, height: ROW_HEIGHT - 4 }}
+                      style={{
+                        top: e.top,
+                        height: ROW_HEIGHT - 4,
+                        left: `calc(${e.col * widthPct}% + 1px)`,
+                        width: `calc(${widthPct}% - 2px)`,
+                      }}
                     >
                       <div className="font-semibold tabular-nums">{e.heure || "—"}</div>
                       <div className="truncate">{e.client || "Client"}</div>
