@@ -19,7 +19,7 @@ function storageKey(reservationId, leg) {
   return `svalet_voiturier_questionnaire_${reservationId}_${leg}`;
 }
 
-function buildSteps(leg, course, answers) {
+function buildSteps(leg, course, answers, suggestionNumeroCle) {
   if (leg === "retour") {
     return [
       {
@@ -120,7 +120,7 @@ function buildSteps(leg, course, answers) {
       type: "parking",
       keys: ["parking_nom", "numero_cle"],
       question: "Où avez-vous garé le véhicule ?",
-      initials: [course.parking_nom || "", course.numero_cle || ""],
+      initials: [course.parking_nom || "", course.numero_cle || suggestionNumeroCle || ""],
     },
     {
       type: "photos",
@@ -137,9 +137,9 @@ function buildSteps(leg, course, answers) {
   ];
 }
 
-function initialAnswersFromCourse(leg, course) {
+function initialAnswersFromCourse(leg, course, suggestionNumeroCle) {
   const init = {};
-  for (const s of buildSteps(leg, course, {})) {
+  for (const s of buildSteps(leg, course, {}, suggestionNumeroCle)) {
     if (s.type === "text2" || s.type === "parking") {
       s.keys.forEach((k, i) => (init[k] = s.initials[i]));
     } else if (s.initial !== undefined) {
@@ -157,7 +157,7 @@ function readSavedProgress(key) {
   }
 }
 
-export default function QuestionnaireWizard({ reservationId, leg, course, parkings = [] }) {
+export default function QuestionnaireWizard({ reservationId, leg, course, parkings = [], suggestionNumeroCle = "" }) {
   const router = useRouter();
   const key = storageKey(reservationId, leg);
 
@@ -166,22 +166,22 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
   // faisait perdre l'étape sauvegardée dès qu'une étape conditionnelle (ex: nouvelle date annoncée)
   // changeait le nombre total d'étapes entre deux ouvertures du questionnaire.
   const [answers, setAnswers] = useState(() => {
-    const init = initialAnswersFromCourse(leg, course);
+    const init = initialAnswersFromCourse(leg, course, suggestionNumeroCle);
     const saved = readSavedProgress(key);
     return saved?.answers ? { ...init, ...saved.answers } : init;
   });
   const [stepIndex, setStepIndex] = useState(() => {
     const saved = readSavedProgress(key);
     if (!saved) return 0;
-    const mergedAnswers = { ...initialAnswersFromCourse(leg, course), ...saved.answers };
-    const restoredSteps = buildSteps(leg, course, mergedAnswers);
+    const mergedAnswers = { ...initialAnswersFromCourse(leg, course, suggestionNumeroCle), ...saved.answers };
+    const restoredSteps = buildSteps(leg, course, mergedAnswers, suggestionNumeroCle);
     return Math.min(saved.stepIndex || 0, restoredSteps.length - 1);
   });
   const [submitting, setSubmitting] = useState(false);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [error, setError] = useState(null);
 
-  const steps = buildSteps(leg, course, answers);
+  const steps = buildSteps(leg, course, answers, suggestionNumeroCle);
 
   // Persistance à chaque changement, pour reprendre exactement à la même étape en cas de sortie.
   useEffect(() => {
@@ -218,6 +218,16 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
         body: JSON.stringify(answers),
       });
       const json = await res.json();
+      if (res.status === 409 && json.suggestion) {
+        // Numéro de clé déjà pris entre-temps par un collègue : on repropose le prochain
+        // disponible et on ramène le voiturier sur l'étape parking pour qu'il valide.
+        setAnswer("numero_cle", json.suggestion);
+        const parkingIndex = steps.findIndex((s) => s.type === "parking");
+        if (parkingIndex >= 0) setStepIndex(parkingIndex);
+        setError(`${json.error} — nouveau numéro proposé : ${json.suggestion}`);
+        setSubmitting(false);
+        return;
+      }
       if (!res.ok || json.error) throw new Error(json.error || "Erreur lors de l'enregistrement");
       localStorage.removeItem(key);
       router.push(`/voiturier/courses/${reservationId}/${leg}`);

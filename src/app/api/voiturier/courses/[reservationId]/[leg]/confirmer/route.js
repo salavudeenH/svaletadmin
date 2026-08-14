@@ -17,6 +17,6 @@ export async function POST(request, { params }) {
     });
     return NextResponse.json(data);
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: err.status || 500 });
+    return NextResponse.json({ error: err.message, suggestion: err.data?.suggestion }, { status: err.status || 500 });
   }
 }

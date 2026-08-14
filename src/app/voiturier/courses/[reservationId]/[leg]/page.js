@@ -127,13 +127,12 @@ export default async function VoiturierCourseDetailPage({ params }) {
       )}
 
       <div className="px-4 pt-6">
-        {estAMoi ? (
-          <ConfirmButton reservationId={reservationId} leg={leg} confirmeLe={c.confirme_le} />
-        ) : (
-          <div className="w-full bg-gray-100 text-gray-500 text-sm rounded-xl px-4 py-3.5 text-center">
-            {c.valet ? `Cette course est assignée à ${c.valet.prenom} ${c.valet.nom}.` : "Cette course n'est pas encore assignée."}
+        {!c.confirme_le && c.valet && !estAMoi && (
+          <div className="mb-3 text-xs text-gray-500 text-center">
+            Course assignée à {c.valet.prenom} {c.valet.nom} — cliquer ci-dessous vous l'assigne à vous.
           </div>
         )}
+        <ConfirmButton reservationId={reservationId} leg={leg} confirmeLe={c.confirme_le} />
       </div>
     </div>
   );

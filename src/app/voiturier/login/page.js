@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { valetLoginAction } from "../actions";
 
@@ -42,6 +43,13 @@ export default function VoiturierLoginPage() {
         >
           {pending ? "Connexion..." : "Se connecter"}
         </button>
+
+        <p className="text-sm text-white/50">
+          Vous êtes admin ?{" "}
+          <Link href="/login" className="text-white font-medium underline decoration-dotted">
+            Accéder à l'espace admin
+          </Link>
+        </p>
       </form>
     </div>
   );

@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarClock, Car, Users, LogOut, Tag, Euro, Star, Package, ShieldAlert, MapPin, Clock, Wallet, Bell, Menu, X } from "lucide-react";
+import { LayoutDashboard, CalendarClock, CalendarRange, Car, Users, LogOut, Tag, Euro, Star, Package, ShieldAlert, MapPin, Clock, Wallet, Bell, Menu, X } from "lucide-react";
 import { logoutAction } from "./actions";
 
 const links = [
   { href: "/", label: "Tableau de bord", icon: LayoutDashboard, fullAdminOnly: true },
   { href: "/reservations", label: "Réservations", icon: CalendarClock },
+  { href: "/planning", label: "Planning", icon: CalendarRange, fullAdminOnly: true },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/valets", label: "Voituriers", icon: Car },
   { href: "/creneaux", label: "Créneaux", icon: Clock, fullAdminOnly: true },

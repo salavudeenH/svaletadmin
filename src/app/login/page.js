@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { loginAction } from "./actions";
 
@@ -62,6 +63,13 @@ export default function LoginPage() {
             {pending ? "Connexion..." : "Se connecter"}
           </button>
         </form>
+
+        <p className="text-center text-sm text-white/50 mt-6">
+          Vous êtes voiturier ?{" "}
+          <Link href="/voiturier/login" className="text-white font-medium underline decoration-dotted">
+            Accéder à l'espace voiturier
+          </Link>
+        </p>
       </div>
     </div>
   );
