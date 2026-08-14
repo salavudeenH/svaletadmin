@@ -99,16 +99,16 @@ function buildSteps(leg, course, answers, suggestionNumeroCle) {
       question: "Aurez-vous des bagages en soute au retour ?",
     },
     {
-      type: "photos",
-      key: "photos_prise_en_charge",
-      photoType: "prise_en_charge",
-      question: "Prenez plusieurs photos du véhicule au dépose-minute",
-    },
-    {
       type: "signature",
       key: "signature_depot",
       consent:
         "En signant, j'accepte les CGV sans réserve et je reconnais confier mon véhicule à SVALET jusqu'à mon retour de voyage et autorise mon voiturier à le conduire et à le stationner.",
+    },
+    {
+      type: "photos",
+      key: "photos_prise_en_charge",
+      photoType: "prise_en_charge",
+      question: "Prenez plusieurs photos du véhicule au dépose-minute",
     },
     {
       type: "number",
@@ -287,7 +287,9 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
 
       {error && <p className="text-white bg-black/20 rounded-lg px-3 py-2 mt-4 text-sm">{error}</p>}
 
-      <div className="flex-1" />
+      {/* Ratio 3/2 plutôt qu'un unique spacer flex-1 : la barre de navigation se retrouve un peu
+          sous le milieu de l'écran, plus facile à atteindre au pouce qu'en bas tout en bas. */}
+      <div className="flex-[3]" />
 
       <div className="flex items-center justify-between">
         <button
@@ -312,6 +314,8 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
         )}
         {step.type === "yesno" && <div className="w-12 h-12" />}
       </div>
+
+      <div className="flex-[2]" />
     </div>
   );
 }
