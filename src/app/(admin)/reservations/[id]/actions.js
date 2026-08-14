@@ -16,9 +16,16 @@ const TEXT_FIELDS = [
   "heure_aller",
   "heure_retour",
   "parking_nom",
+  "vol_retour_ville_depart",
+  "vol_retour_compagnie",
+  "incident_description",
 ];
 
-const DATE_FIELDS = ["date_aller", "date_retour"];
+const DATE_FIELDS = ["date_aller", "date_retour", "date_retour_annoncee"];
+
+const BOOLEAN_FIELDS = ["sky_priority", "bagages_soute", "retour_confirme_par_client", "incident_signale"];
+
+const NUMBER_FIELDS = ["kilometrage_depot", "kilometrage_retour"];
 
 export async function updateReservationAction(id, prevState, formData) {
   const body = {
@@ -36,6 +43,13 @@ export async function updateReservationAction(id, prevState, formData) {
   for (const field of DATE_FIELDS) {
     const value = formData.get(field)?.toString();
     if (value) body[field] = value;
+  }
+  for (const field of BOOLEAN_FIELDS) {
+    body[field] = formData.get(field) === "true";
+  }
+  for (const field of NUMBER_FIELDS) {
+    const value = formData.get(field)?.toString();
+    if (value) body[field] = Number(value);
   }
 
   try {

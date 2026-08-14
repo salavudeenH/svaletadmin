@@ -165,6 +165,117 @@ export default function ReservationForm({ reservation, valets, parkings, action 
       </div>
 
       <div className="bg-white rounded-card border border-gray-200 p-4 sm:p-5 space-y-4">
+        <h2 className="font-semibold">Infos voiturier</h2>
+        <p className="text-xs text-gray-400 -mt-2">
+          Normalement remplies par le voiturier depuis son questionnaire mobile — à corriger ici en cas d'oubli ou d'erreur.
+        </p>
+
+        <div>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Prise en charge</h3>
+          <div className="flex flex-wrap gap-4 mb-3">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                name="sky_priority"
+                value="true"
+                defaultChecked={Boolean(reservation.sky_priority)}
+                className="rounded border-gray-300 text-brand focus:ring-brand"
+              />
+              Sky Priority
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                name="bagages_soute"
+                value="true"
+                defaultChecked={Boolean(reservation.bagages_soute)}
+                className="rounded border-gray-300 text-brand focus:ring-brand"
+              />
+              Bagages en soute au retour
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                name="retour_confirme_par_client"
+                value="true"
+                defaultChecked={Boolean(reservation.retour_confirme_par_client)}
+                className="rounded border-gray-300 text-brand focus:ring-brand"
+              />
+              Revient à la date prévue
+            </label>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nouvelle date annoncée</label>
+              <input
+                name="date_retour_annoncee"
+                type="date"
+                defaultValue={reservation.date_retour_annoncee ? reservation.date_retour_annoncee.slice(0, 10) : ""}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ville de départ (vol retour)</label>
+              <input
+                name="vol_retour_ville_depart"
+                defaultValue={reservation.vol_retour_ville_depart || ""}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Compagnie aérienne</label>
+              <input
+                name="vol_retour_compagnie"
+                defaultValue={reservation.vol_retour_compagnie || ""}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Kilométrage au dépôt</label>
+            <input
+              name="kilometrage_depot"
+              type="number"
+              defaultValue={reservation.kilometrage_depot ?? ""}
+              className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-gray-100">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Restitution</h3>
+          <div className="mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Kilométrage au retour</label>
+            <input
+              name="kilometrage_retour"
+              type="number"
+              defaultValue={reservation.kilometrage_retour ?? ""}
+              className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700 mb-2">
+            <input
+              type="checkbox"
+              name="incident_signale"
+              value="true"
+              defaultChecked={Boolean(reservation.incident_signale)}
+              className="rounded border-gray-300 text-brand focus:ring-brand"
+            />
+            Incident signalé
+          </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description de l'incident</label>
+            <textarea
+              name="incident_description"
+              defaultValue={reservation.incident_description || ""}
+              rows={2}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-card border border-gray-200 p-4 sm:p-5 space-y-4">
         <h2 className="font-semibold">Assignation & statut</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
