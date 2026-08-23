@@ -17,6 +17,7 @@ export default async function QuestionnairePage({ params }) {
       course={course}
       parkings={parkingsRes.data || []}
       suggestionNumeroCle={numeroCleRes.data?.numero_cle || ""}
+      savedProgression={course.questionnaire || null}
     />
   );
 }

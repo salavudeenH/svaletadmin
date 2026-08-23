@@ -186,6 +186,44 @@ export default function NewReservationForm({ parkings = [] }) {
       </div>
 
       <div className="bg-white rounded-card border border-gray-200 p-4 sm:p-5 space-y-4">
+        <h2 className="font-semibold">Véhicule</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Marque</label>
+            <input
+              name="vehicule_marque"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Modèle</label>
+            <input
+              name="vehicule_modele"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Couleur</label>
+            <input
+              name="vehicule_couleur"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Immatriculation</label>
+            <input
+              name="vehicule_plaque"
+              placeholder="Ex: AB-123-CD"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+        </div>
+        <p className="text-xs text-gray-400">
+          Laisser vide si le véhicule n'est pas encore connu — l'immatriculation est requise pour l'enregistrer.
+        </p>
+      </div>
+
+      <div className="bg-white rounded-card border border-gray-200 p-4 sm:p-5 space-y-4">
         <h2 className="font-semibold">Dates & vol</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

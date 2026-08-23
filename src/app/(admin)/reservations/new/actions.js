@@ -4,6 +4,15 @@ import { redirect } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
 export async function createReservationAction(prevState, formData) {
+  const vehiculeMarque = formData.get("vehicule_marque")?.toString().trim();
+  const vehiculeModele = formData.get("vehicule_modele")?.toString().trim();
+  const vehiculeCouleur = formData.get("vehicule_couleur")?.toString().trim();
+  const vehiculePlaque = formData.get("vehicule_plaque")?.toString().trim();
+  const vehicleSnapshot =
+    vehiculeMarque || vehiculeModele || vehiculeCouleur || vehiculePlaque
+      ? { marque: vehiculeMarque, modele: vehiculeModele, couleur: vehiculeCouleur, plaque: vehiculePlaque }
+      : undefined;
+
   const body = {
     client_id: formData.get("client_id")?.toString() || null,
     contact_prenom: formData.get("contact_prenom")?.toString().trim(),
@@ -28,6 +37,7 @@ export async function createReservationAction(prevState, formData) {
     montant_total: formData.get("montant_total")?.toString(),
     nombre_de_jours: formData.get("nombre_de_jours")?.toString() || undefined,
     note_interne: formData.get("note_interne")?.toString().trim(),
+    vehicle_snapshot: vehicleSnapshot,
   };
 
   let reservation;

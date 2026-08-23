@@ -8,26 +8,8 @@ import PaymentLinkButton from "./PaymentLinkButton";
 import InvoiceButton from "./InvoiceButton";
 import EmailActionsCard from "./EmailActionsCard";
 import NotificationBanner from "./NotificationBanner";
+import PhotosManager from "./PhotosManager";
 import { updateReservationAction } from "./actions";
-
-function PhotoGallery({ title, urls }) {
-  return (
-    <div className="mt-3">
-      <p className="text-gray-500 text-sm mb-1">{title}</p>
-      {urls && urls.length > 0 ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-          {urls.map((url, i) => (
-            <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-              <img src={url} alt={`${title} ${i + 1}`} className="w-full aspect-square object-cover rounded-lg border border-gray-200" />
-            </a>
-          ))}
-        </div>
-      ) : (
-        <p className="text-gray-400 text-sm">Non renseigné</p>
-      )}
-    </div>
-  );
-}
 
 function BooleanBadge({ value }) {
   if (value === undefined || value === null) {
@@ -218,9 +200,29 @@ export default async function ReservationDetailPage({ params }) {
             <p className="text-gray-400 text-sm mt-3">Signature non renseignée</p>
           )}
 
-          <PhotoGallery title="Photos prise en charge (dépose-minute)" urls={reservation.photos_prise_en_charge_urls} />
-          <PhotoGallery title="Photo véhicule garé" urls={reservation.photos_voiture_garee_urls} />
-          <PhotoGallery title="Photo dépôt clé au coffre" urls={reservation.photos_cle_coffre_urls} />
+          <PhotosManager
+            reservationId={reservation._id}
+            sections={[
+              {
+                type: "prise_en_charge",
+                label: "Photos prise en charge (dépose-minute)",
+                keys: reservation.photos_prise_en_charge || [],
+                urls: reservation.photos_prise_en_charge_urls || [],
+              },
+              {
+                type: "voiture_garee",
+                label: "Photo véhicule garé",
+                keys: reservation.photos_voiture_garee || [],
+                urls: reservation.photos_voiture_garee_urls || [],
+              },
+              {
+                type: "cle_coffre",
+                label: "Photo dépôt clé au coffre",
+                keys: reservation.photos_cle_coffre || [],
+                urls: reservation.photos_cle_coffre_urls || [],
+              },
+            ]}
+          />
         </div>
 
         <div className="pt-4 border-t border-gray-100">

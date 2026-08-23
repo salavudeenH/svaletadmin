@@ -109,6 +109,7 @@ function buildSteps(leg, course, answers, suggestionNumeroCle) {
       key: "photos_prise_en_charge",
       photoType: "prise_en_charge",
       question: "Prenez plusieurs photos du véhicule au dépose-minute",
+      minPhotos: 30,
     },
     {
       type: "number",
@@ -157,7 +158,20 @@ function readSavedProgress(key) {
   }
 }
 
-export default function QuestionnaireWizard({ reservationId, leg, course, parkings = [], suggestionNumeroCle = "" }) {
+// Choisit la progression la plus récente entre celle sauvegardée en base (accessible depuis
+// n'importe quel téléphone) et celle du localStorage (peut être plus fraîche si l'autosave réseau
+// a échoué juste avant que l'appli ne soit fermée) — on ne perd jamais la plus avancée des deux.
+function resolveSavedProgress(localSaved, serverSaved) {
+  if (!serverSaved) return localSaved;
+  if (!localSaved) return { stepIndex: serverSaved.step_index, answers: serverSaved.answers, updated_at: serverSaved.updated_at };
+  const serverTime = serverSaved.updated_at ? new Date(serverSaved.updated_at).getTime() : 0;
+  const localTime = localSaved.updated_at || 0;
+  return serverTime >= localTime
+    ? { stepIndex: serverSaved.step_index, answers: serverSaved.answers, updated_at: serverTime }
+    : localSaved;
+}
+
+export default function QuestionnaireWizard({ reservationId, leg, course, parkings = [], suggestionNumeroCle = "", savedProgression = null }) {
   const router = useRouter();
   const key = storageKey(reservationId, leg);
 
@@ -167,11 +181,11 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
   // changeait le nombre total d'étapes entre deux ouvertures du questionnaire.
   const [answers, setAnswers] = useState(() => {
     const init = initialAnswersFromCourse(leg, course, suggestionNumeroCle);
-    const saved = readSavedProgress(key);
+    const saved = resolveSavedProgress(readSavedProgress(key), savedProgression);
     return saved?.answers ? { ...init, ...saved.answers } : init;
   });
   const [stepIndex, setStepIndex] = useState(() => {
-    const saved = readSavedProgress(key);
+    const saved = resolveSavedProgress(readSavedProgress(key), savedProgression);
     if (!saved) return 0;
     const mergedAnswers = { ...initialAnswersFromCourse(leg, course, suggestionNumeroCle), ...saved.answers };
     const restoredSteps = buildSteps(leg, course, mergedAnswers, suggestionNumeroCle);
@@ -183,9 +197,22 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
 
   const steps = buildSteps(leg, course, answers, suggestionNumeroCle);
 
-  // Persistance à chaque changement, pour reprendre exactement à la même étape en cas de sortie.
+  // Persistance à chaque changement, pour reprendre exactement à la même étape en cas de sortie —
+  // en local tout de suite, et en base (best-effort, avec un léger débounce) pour survivre à un
+  // changement de téléphone ou une appli fermée sans que le voiturier ait terminé la course.
   useEffect(() => {
-    localStorage.setItem(key, JSON.stringify({ stepIndex, answers }));
+    localStorage.setItem(key, JSON.stringify({ stepIndex, answers, updated_at: Date.now() }));
+
+    const timeout = setTimeout(() => {
+      fetch(`/api/voiturier/courses/${reservationId}/${leg}/progression`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ step_index: stepIndex, answers }),
+      }).catch(() => {
+        // Best-effort : le localStorage reste le filet de sécurité si le réseau est coupé.
+      });
+    }, 600);
+    return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex, answers]);
 
@@ -201,6 +228,7 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
     if (step.type === "yesno") return answers[step.key] !== undefined;
     if (step.type === "parking") return Boolean(answers[step.keys[0]]) && Boolean(answers[step.keys[1]]);
     if (step.type === "textarea") return Boolean(answers[step.key]?.trim());
+    if (step.type === "photos" && step.minPhotos) return (answers[step.key]?.length || 0) >= step.minPhotos;
     return true;
   }
 

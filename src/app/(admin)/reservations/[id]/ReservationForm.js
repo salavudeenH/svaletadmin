@@ -51,6 +51,45 @@ export default function ReservationForm({ reservation, valets, parkings, action 
       </div>
 
       <div className="bg-white rounded-card border border-gray-200 p-4 sm:p-5 space-y-4">
+        <h2 className="font-semibold">Véhicule</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Marque</label>
+            <input
+              name="vehicule_marque"
+              defaultValue={reservation.vehicle_snapshot?.marque || ""}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Modèle</label>
+            <input
+              name="vehicule_modele"
+              defaultValue={reservation.vehicle_snapshot?.modele || ""}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Couleur</label>
+            <input
+              name="vehicule_couleur"
+              defaultValue={reservation.vehicle_snapshot?.couleur || ""}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Immatriculation</label>
+            <input
+              name="vehicule_plaque"
+              defaultValue={reservation.vehicle_snapshot?.plaque || ""}
+              placeholder="Ex: AB-123-CD"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-card border border-gray-200 p-4 sm:p-5 space-y-4">
         <h2 className="font-semibold">Dates, vol & parking</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

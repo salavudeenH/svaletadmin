@@ -52,6 +52,19 @@ export async function updateReservationAction(id, prevState, formData) {
     if (value) body[field] = Number(value);
   }
 
+  const vehiculeMarque = formData.get("vehicule_marque")?.toString().trim() || "";
+  const vehiculeModele = formData.get("vehicule_modele")?.toString().trim() || "";
+  const vehiculeCouleur = formData.get("vehicule_couleur")?.toString().trim() || "";
+  const vehiculePlaque = formData.get("vehicule_plaque")?.toString().trim() || "";
+  if (vehiculeMarque || vehiculeModele || vehiculeCouleur || vehiculePlaque) {
+    body.vehicle_snapshot = {
+      marque: vehiculeMarque,
+      modele: vehiculeModele,
+      couleur: vehiculeCouleur,
+      plaque: vehiculePlaque,
+    };
+  }
+
   try {
     await apiFetch(`/admin/reservations/${id}`, { method: "PUT", body });
   } catch (err) {

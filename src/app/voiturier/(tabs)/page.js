@@ -37,10 +37,12 @@ export default async function VoiturierCoursesPage({ searchParams }) {
   const canGoPrev = prevDate >= minDate;
   const canGoNext = nextDate <= maxDate;
 
-  const [{ data: valet }, { data: courses }] = await Promise.all([
+  const [{ data: valet }, { data: courses }, { data: bloquantes }] = await Promise.all([
     valetApiFetch("/me"),
     valetApiFetch(`/courses?date=${date}`),
+    valetApiFetch("/me/courses-bloquantes"),
   ]);
+  const nbBloquantes = (bloquantes || []).length;
 
   return (
     <div>
@@ -57,6 +59,16 @@ export default async function VoiturierCoursesPage({ searchParams }) {
           </button>
         </form>
       </div>
+
+      {nbBloquantes > 0 && (
+        <Link
+          href="/voiturier/bloquantes"
+          className="block bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-4 py-3"
+        >
+          ⚠ {nbBloquantes} course{nbBloquantes > 1 ? "s" : ""} bloquante{nbBloquantes > 1 ? "s" : ""} — merci de
+          compléter les informations manquantes
+        </Link>
+      )}
 
       <Pager
         label={fmtDateFR(date)}

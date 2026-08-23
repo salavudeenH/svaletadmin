@@ -2,22 +2,36 @@
 
 import { useState, useRef } from "react";
 
-// Redimensionne + compresse côté téléphone avant l'envoi — indispensable vu le volume de photos
-// (walkaround complet du véhicule), sans quoi l'upload serait énorme et lent en 4G.
-async function compressImage(file, maxDimension = 1600, quality = 0.72) {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  return new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+// Aucune compression : une photo redimensionnée/recompressée peut faire disparaître une rayure
+// fine sur la carrosserie, ce qui est justement ce que ces photos doivent prouver.
+// En contrepartie, on envoie les fichiers par petits lots plutôt que tous d'un coup : au-delà
+// d'une poignée d'envois simultanés (ex. 60 photos sélectionnées en une fois), la connexion
+// mobile sature et les requêtes échouent en cascade — d'où le besoin de traiter par paquets et
+// d'enregistrer au fur et à mesure, pour ne jamais perdre les photos déjà envoyées avec succès.
+const BATCH_SIZE = 5;
+
+async function uploadOne(file, uploadUrl) {
+  const res = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+    body: file,
+  });
+  if (!res.ok) throw new Error(`Échec de l'envoi (${res.status})`);
+}
+
+async function uploadWithRetry(file, uploadUrl) {
+  try {
+    await uploadOne(file, uploadUrl);
+  } catch {
+    // Un échec réseau ponctuel en 4G/5G est fréquent — on retente une fois avant d'abandonner.
+    await uploadOne(file, uploadUrl);
+  }
 }
 
 export default function PhotosField({ reservationId, leg, photoType, value = [], onChange, uploading, setUploading }) {
   const [previews, setPreviews] = useState([]);
   const [error, setError] = useState(null);
+  const [progress, setProgress] = useState(null); // { done, total }
   const inputRef = useRef(null);
 
   async function handleFiles(e) {
@@ -27,32 +41,61 @@ export default function PhotosField({ reservationId, leg, photoType, value = [],
 
     setError(null);
     setUploading(true);
-    try {
-      const compressed = await Promise.all(files.map((f) => compressImage(f)));
+    setProgress({ done: 0, total: files.length });
 
+    let accumulated = [...value];
+    const echouees = [];
+
+    try {
       const presignRes = await fetch(`/api/voiturier/courses/${reservationId}/${leg}/photos/presign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: photoType,
-          files: files.map((f) => ({ filename: f.name, contentType: "image/jpeg" })),
+          files: files.map((f) => ({ filename: f.name, contentType: f.type || "application/octet-stream" })),
         }),
       });
       const presignJson = await presignRes.json();
       if (!presignRes.ok || presignJson.error) throw new Error(presignJson.error || "Erreur de préparation de l'envoi");
+      const presigned = presignJson.data;
 
-      await Promise.all(
-        presignJson.data.map((p, i) =>
-          fetch(p.uploadUrl, { method: "PUT", headers: { "Content-Type": "image/jpeg" }, body: compressed[i] })
-        )
-      );
+      for (let i = 0; i < files.length; i += BATCH_SIZE) {
+        const batchFiles = files.slice(i, i + BATCH_SIZE);
+        const batchPresigned = presigned.slice(i, i + BATCH_SIZE);
 
-      onChange([...value, ...presignJson.data.map((p) => p.key)]);
-      setPreviews((prev) => [...prev, ...compressed.map((blob) => URL.createObjectURL(blob))]);
+        const results = await Promise.allSettled(
+          batchFiles.map((file, j) => uploadWithRetry(file, batchPresigned[j].uploadUrl))
+        );
+
+        const nouvellesCles = [];
+        const nouveauxApercus = [];
+        results.forEach((r, j) => {
+          if (r.status === "fulfilled") {
+            nouvellesCles.push(batchPresigned[j].key);
+            nouveauxApercus.push(URL.createObjectURL(batchFiles[j]));
+          } else {
+            echouees.push(batchFiles[j].name);
+          }
+        });
+
+        if (nouvellesCles.length) {
+          accumulated = [...accumulated, ...nouvellesCles];
+          onChange(accumulated);
+          setPreviews((prev) => [...prev, ...nouveauxApercus]);
+        }
+        setProgress({ done: Math.min(i + BATCH_SIZE, files.length), total: files.length });
+      }
+
+      if (echouees.length) {
+        setError(
+          `${echouees.length} photo(s) sur ${files.length} n'ont pas pu être envoyées (${echouees.join(", ")}). Les autres ont bien été enregistrées — réessayez pour celles-ci.`
+        );
+      }
     } catch (err) {
       setError(err.message || "Erreur lors de l'envoi des photos");
     } finally {
       setUploading(false);
+      setProgress(null);
     }
   }
 
@@ -65,7 +108,11 @@ export default function PhotosField({ reservationId, leg, photoType, value = [],
         disabled={uploading}
         className="w-full border-2 border-dashed border-white/50 rounded-xl py-6 text-white font-medium disabled:opacity-60"
       >
-        {uploading ? "Envoi en cours..." : "+ Ajouter des photos"}
+        {uploading
+          ? progress
+            ? `Envoi en cours... ${progress.done} / ${progress.total}`
+            : "Envoi en cours..."
+          : "+ Ajouter des photos"}
       </button>
 
       {previews.length > 0 && (
