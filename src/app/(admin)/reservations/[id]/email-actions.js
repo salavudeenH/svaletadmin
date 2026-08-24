@@ -28,3 +28,12 @@ export async function sendConfirmationRetourAction(reservationId) {
     return { error: err.message || "Erreur lors de l'envoi de la confirmation." };
   }
 }
+
+export async function sendConfirmationReservationAction(reservationId) {
+  try {
+    await apiFetch("/emails/confirmation-reservation", { method: "POST", body: { reservationId } });
+    return { success: true };
+  } catch (err) {
+    return { error: err.message || "Erreur lors de l'envoi de la confirmation de réservation." };
+  }
+}

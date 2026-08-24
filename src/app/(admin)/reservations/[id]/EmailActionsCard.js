@@ -5,9 +5,17 @@ import {
   sendInstructionsVoiturierAction,
   sendRappelDepartAction,
   sendConfirmationRetourAction,
+  sendConfirmationReservationAction,
 } from "./email-actions";
 
 const EMAILS = [
+  {
+    key: "confirmation",
+    label: "Confirmation de réservation",
+    description: "Renvoie au client l'email de confirmation de sa réservation payée.",
+    needsValet: false,
+    action: sendConfirmationReservationAction,
+  },
   {
     key: "instructions",
     label: "Instructions voiturier",
