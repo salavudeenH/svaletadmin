@@ -3,6 +3,7 @@ import { getSessionToken, getRole } from "@/lib/session";
 import { apiFetch } from "@/lib/api";
 import Sidebar from "./Sidebar";
 
+// Redeploy trigger — 2026-09-07
 export default async function AdminLayout({ children }) {
   const token = await getSessionToken();
   if (!token) {
