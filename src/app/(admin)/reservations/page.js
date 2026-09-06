@@ -16,19 +16,24 @@ export default async function ReservationsPage({ searchParams }) {
   const valet = params?.valet || "";
   const date_debut = params?.date_debut || "";
   const date_fin = params?.date_fin || "";
+  const parking = params?.parking || "";
+  const mois = params?.mois || "";
+  const vue = params?.vue === "retours" ? "retours" : "";
+  const tri = params?.tri === "asc" || params?.tri === "desc" ? params.tri : mois ? "asc" : "desc";
   const page = params?.page || "1";
 
-  const filterParams = { statut, search, valet, date_debut, date_fin };
+  const filterParams = { statut, search, valet, date_debut, date_fin, parking, mois, vue, tri: params?.tri || "" };
 
   const query = new URLSearchParams();
-  Object.entries(filterParams).forEach(([key, value]) => {
+  Object.entries({ statut, search, valet, date_debut, date_fin, parking, mois, vue, tri }).forEach(([key, value]) => {
     if (value) query.set(key, value);
   });
   query.set("page", page);
 
-  const [{ data: reservations, pagination }, { data: valets }] = await Promise.all([
+  const [{ data: reservations, pagination }, { data: valets }, { data: parkings }] = await Promise.all([
     apiFetch(`/admin/reservations?${query.toString()}`),
     apiFetch("/admin/valets"),
+    apiFetch("/admin/parkings?actif=true"),
   ]);
 
   return (
@@ -74,6 +79,18 @@ export default async function ReservationsPage({ searchParams }) {
         </div>
 
         <div>
+          <label className="block text-xs text-gray-500 mb-1">Parking</label>
+          <Select name="parking" defaultValue={parking}>
+            <option value="">Tous les parkings</option>
+            {parkings.map((p) => (
+              <option key={p._id} value={p.nom}>
+                {p.nom}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div>
           <label className="block text-xs text-gray-500 mb-1">Aller — du</label>
           <Input type="date" name="date_debut" defaultValue={date_debut} />
         </div>
@@ -83,8 +100,29 @@ export default async function ReservationsPage({ searchParams }) {
           <Input type="date" name="date_fin" defaultValue={date_fin} />
         </div>
 
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Mois</label>
+          <Input type="month" name="mois" defaultValue={mois} />
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Vue</label>
+          <Select name="vue" defaultValue={vue}>
+            <option value="">Prises en charge</option>
+            <option value="retours">Retours (véhicules rentrés)</option>
+          </Select>
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Tri par date</label>
+          <Select name="tri" defaultValue={tri}>
+            <option value="asc">Croissant</option>
+            <option value="desc">Décroissant</option>
+          </Select>
+        </div>
+
         <Button type="submit">Filtrer</Button>
-        {(statut || search || valet || date_debut || date_fin) && (
+        {(statut || search || valet || date_debut || date_fin || parking || mois || vue || params?.tri) && (
           <Link href="/reservations" className="text-sm text-gray-500 hover:text-brand hover:underline px-1 py-2">
             Réinitialiser
           </Link>

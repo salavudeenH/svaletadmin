@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarClock, CalendarRange, Car, Users, LogOut, Tag, Euro, Star, Package, ShieldAlert, MapPin, Clock, Wallet, Bell, Menu, X } from "lucide-react";
+import { LayoutDashboard, CalendarClock, CalendarRange, Car, Users, LogOut, Tag, Euro, Star, Package, ShieldAlert, MapPin, ParkingSquare, Clock, Wallet, Bell, Menu, X } from "lucide-react";
 import { logoutAction } from "./actions";
 
 const links = [
@@ -18,6 +18,7 @@ const links = [
   { href: "/tarifs", label: "Tarifs", icon: Euro, fullAdminOnly: true },
   { href: "/options", label: "Options", icon: Package, fullAdminOnly: true },
   { href: "/parkings", label: "Parkings", icon: MapPin, fullAdminOnly: true },
+  { href: "/parking-occupation", label: "Occupation parkings", icon: ParkingSquare, fullAdminOnly: true },
   { href: "/reviews", label: "Avis clients", icon: Star },
   { href: "/users", label: "Utilisateurs", icon: Users, fullAdminOnly: true },
   { href: "/securite", label: "Sécurité", icon: ShieldAlert, fullAdminOnly: true },
