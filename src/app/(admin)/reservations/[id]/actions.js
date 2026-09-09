@@ -65,6 +65,12 @@ export async function updateReservationAction(id, prevState, formData) {
     };
   }
 
+  const facturationActive = formData.get("facturation_active")?.toString() === "true";
+  const facturationNom = formData.get("facturation_nom")?.toString().trim() || "";
+  const facturationAdresse = formData.get("facturation_adresse")?.toString().trim() || "";
+  body.facturation_entreprise =
+    facturationActive && facturationNom ? { nom: facturationNom, adresse: facturationAdresse } : null;
+
   try {
     await apiFetch(`/admin/reservations/${id}`, { method: "PUT", body });
   } catch (err) {

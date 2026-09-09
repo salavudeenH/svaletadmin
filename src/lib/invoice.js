@@ -49,12 +49,18 @@ export async function generateInvoicePDF(reservation) {
     reservation?.numero_reservation || `FACT-${String(reservation?._id || "XXXX").slice(-8).toUpperCase()}`;
   const today = new Date().toLocaleDateString("fr-FR");
 
-  const clientName =
-    `${reservation?.contact_prenom || reservation?.user?.firstname || ""} ${
-      reservation?.contact_nom || reservation?.user?.lastname || ""
-    }`.trim() || "Client SVALET";
-  const clientEmail = reservation?.contact_email || reservation?.user?.email || "";
-  const clientPhone = reservation?.contact_telephone || reservation?.user?.phone || "";
+  const facturationEntreprise = reservation?.facturation_entreprise?.nom ? reservation.facturation_entreprise : null;
+
+  const clientName = facturationEntreprise
+    ? facturationEntreprise.nom
+    : `${reservation?.contact_prenom || reservation?.user?.firstname || ""} ${
+        reservation?.contact_nom || reservation?.user?.lastname || ""
+      }`.trim() || "Client SVALET";
+  const clientAddressLines = facturationEntreprise?.adresse
+    ? facturationEntreprise.adresse.split("\n").map((line) => line.trim()).filter(Boolean)
+    : [];
+  const clientEmail = facturationEntreprise ? "" : reservation?.contact_email || reservation?.user?.email || "";
+  const clientPhone = facturationEntreprise ? "" : reservation?.contact_telephone || reservation?.user?.phone || "";
 
   const dateAller = fmtDate(reservation?.date_aller);
   const dateRetour = fmtDate(reservation?.date_retour);
@@ -135,6 +141,7 @@ export async function generateInvoicePDF(reservation) {
   const clientX = MARGIN_L + CONTENT_W * 0.55;
   drawStack(clientX, infoY, [
     { text: clientName, bold: true },
+    ...clientAddressLines.map((text) => ({ text })),
     ...(clientEmail ? [{ text: clientEmail }] : []),
     ...(clientPhone ? [{ text: `Tél : ${clientPhone}` }] : []),
   ]);

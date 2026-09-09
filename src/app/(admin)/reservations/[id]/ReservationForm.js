@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useActionState } from "react";
 import { STATUT_LABELS } from "@/lib/statuts";
 import Button from "@/components/ui/Button";
@@ -8,6 +9,9 @@ const initialState = { error: null, success: false };
 
 export default function ReservationForm({ reservation, valets, parkings, action }) {
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [facturationEntreprise, setFacturationEntreprise] = useState(
+    Boolean(reservation.facturation_entreprise?.nom)
+  );
 
   return (
     <form action={formAction} className="space-y-6">
@@ -48,6 +52,44 @@ export default function ReservationForm({ reservation, valets, parkings, action 
             />
           </div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-card border border-gray-200 p-4 sm:p-5 space-y-4">
+        <h2 className="font-semibold">Facturation</h2>
+        <input type="hidden" name="facturation_active" value={facturationEntreprise ? "true" : "false"} />
+        <label className="flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={facturationEntreprise}
+            onChange={(e) => setFacturationEntreprise(e.target.checked)}
+            className="rounded border-gray-300 text-brand focus:ring-brand"
+          />
+          Facturer au nom d'une entreprise
+        </label>
+        {facturationEntreprise && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nom de l'entreprise</label>
+              <input
+                name="facturation_nom"
+                defaultValue={reservation.facturation_entreprise?.nom || ""}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Adresse de l'entreprise</label>
+              <textarea
+                name="facturation_adresse"
+                defaultValue={reservation.facturation_entreprise?.adresse || ""}
+                rows={2}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              />
+            </div>
+          </div>
+        )}
+        <p className="text-xs text-gray-400">
+          Si activé, le nom et l'adresse de l'entreprise remplacent le nom du client sur la facture PDF.
+        </p>
       </div>
 
       <div className="bg-white rounded-card border border-gray-200 p-4 sm:p-5 space-y-4">
