@@ -7,7 +7,7 @@ import { createReservationAction } from "./actions";
 
 const initialState = { error: null };
 
-export default function NewReservationForm({ parkings = [] }) {
+export default function NewReservationForm({ parkings = [], options = [] }) {
   const [state, formAction, pending] = useActionState(createReservationAction, initialState);
 
   const [clientQuery, setClientQuery] = useState("");
@@ -33,7 +33,53 @@ export default function NewReservationForm({ parkings = [] }) {
   const [priceError, setPriceError] = useState(null);
   const [calculating, setCalculating] = useState(false);
 
+  const [selectedOptions, setSelectedOptions] = useState([]);
+  const [montantOptions, setMontantOptions] = useState(0);
+
   const debounceRef = useRef(null);
+
+  function addAmountToTotal(amount) {
+    setMontantTotal((prev) => {
+      const current = Number(prev) || 0;
+      return current + amount;
+    });
+  }
+
+  function toggleOption(opt, checked) {
+    if (checked) {
+      const line = {
+        code: opt.code,
+        nom: opt.nom,
+        prix: opt.prix,
+        image: opt.image,
+        texte: opt.texte,
+        qty: 1,
+        subtotal: opt.prix,
+      };
+      setSelectedOptions((prev) => [...prev, line]);
+      setMontantOptions((prev) => prev + line.subtotal);
+      addAmountToTotal(line.subtotal);
+    } else {
+      const line = selectedOptions.find((l) => l.code === opt.code);
+      if (!line) return;
+      setSelectedOptions((prev) => prev.filter((l) => l.code !== opt.code));
+      setMontantOptions((prev) => prev - line.subtotal);
+      addAmountToTotal(-line.subtotal);
+    }
+  }
+
+  function updateOptionQty(code, qty) {
+    const safeQty = Math.max(1, Number(qty) || 1);
+    const line = selectedOptions.find((l) => l.code === code);
+    if (!line) return;
+    const newSubtotal = line.prix * safeQty;
+    const diff = newSubtotal - line.subtotal;
+    setSelectedOptions((prev) =>
+      prev.map((l) => (l.code === code ? { ...l, qty: safeQty, subtotal: newSubtotal } : l))
+    );
+    setMontantOptions((prev) => prev + diff);
+    addAmountToTotal(diff);
+  }
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -87,7 +133,7 @@ export default function NewReservationForm({ parkings = [] }) {
       if (!res.ok) throw new Error(json.error || "Erreur de calcul du prix");
       setMontantBase(json.prixBase);
       setSurcharges(json.supplementsHoraires);
-      setMontantTotal(json.prixTotal);
+      setMontantTotal(Number(json.prixTotal) + montantOptions);
       setNombreJours(json.nombreJours);
     } catch (err) {
       setPriceError(err.message);
@@ -354,6 +400,48 @@ export default function NewReservationForm({ parkings = [] }) {
         </label>
       </div>
 
+      {options.length > 0 && (
+        <div className="bg-white rounded-card border border-gray-200 p-4 sm:p-5 space-y-4">
+          <h2 className="font-semibold">Options</h2>
+          <div className="space-y-2">
+            {options.map((opt) => {
+              const selected = selectedOptions.find((l) => l.code === opt.code);
+              return (
+                <div key={opt.code} className="flex items-center gap-3 py-1 border-b border-gray-100 last:border-0">
+                  <label className="flex items-center gap-2 flex-1 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={!!selected}
+                      onChange={(e) => toggleOption(opt, e.target.checked)}
+                      className="rounded border-gray-300 text-brand focus:ring-brand"
+                    />
+                    {opt.nom} <span className="text-gray-400">({opt.prix} €)</span>
+                  </label>
+                  {selected && (
+                    <input
+                      type="number"
+                      min={1}
+                      value={selected.qty}
+                      onChange={(e) => updateOptionQty(opt.code, e.target.value)}
+                      className="w-16 rounded-lg border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                    />
+                  )}
+                  {selected && (
+                    <span className="text-sm text-gray-500 w-20 text-right">{selected.subtotal.toFixed(2)} €</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {montantOptions > 0 && (
+            <p className="text-sm text-gray-600">
+              Total options : <span className="font-medium">{montantOptions.toFixed(2)} €</span> (déjà inclus dans le
+              montant total ci-dessous)
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="bg-white rounded-card border border-gray-200 p-4 sm:p-5 space-y-4">
         <h2 className="font-semibold">Prix</h2>
 
@@ -414,8 +502,11 @@ export default function NewReservationForm({ parkings = [] }) {
           </div>
         </div>
         <input type="hidden" name="nombre_de_jours" value={nombreJours} />
+        <input type="hidden" name="montant_options" value={montantOptions} />
+        <input type="hidden" name="options" value={JSON.stringify(selectedOptions)} />
         <p className="text-xs text-gray-400">
-          Le montant total reste modifiable manuellement, y compris après calcul automatique.
+          Le montant total reste modifiable manuellement, y compris après calcul automatique ou ajout d'options. Le
+          prix des options n'est pas affecté par une modification manuelle du montant total.
         </p>
       </div>
 

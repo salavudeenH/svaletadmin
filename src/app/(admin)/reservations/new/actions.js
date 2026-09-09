@@ -34,6 +34,14 @@ export async function createReservationAction(prevState, formData) {
     garde_cle: formData.get("garde_cle") === "true",
     montant_base: formData.get("montant_base")?.toString() || 0,
     surcharges: formData.get("surcharges")?.toString() || 0,
+    montant_options: formData.get("montant_options")?.toString() || 0,
+    options: (() => {
+      try {
+        return JSON.parse(formData.get("options")?.toString() || "[]");
+      } catch {
+        return [];
+      }
+    })(),
     montant_total: formData.get("montant_total")?.toString(),
     nombre_de_jours: formData.get("nombre_de_jours")?.toString() || undefined,
     note_interne: formData.get("note_interne")?.toString().trim(),
