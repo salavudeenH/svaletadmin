@@ -94,9 +94,9 @@ export default function WeekGrid({ days, evenements }) {
                     <Link
                       key={`${e.reservation_id}_${e.type}`}
                       href={`/reservations/${e.reservation_id}`}
-                      title={`${e.heure || "?"} · ${e.client || "Client"} · ${e.vehicule || ""}`}
+                      title={`${e.heure || "?"} · ${e.client || "Client"} · ${e.vehicule || ""}${e.options?.length ? " · " + e.options.join(", ") : ""}`}
                       className={`absolute rounded px-1 py-0.5 text-[10px] leading-tight text-white overflow-hidden hover:opacity-90 hover:z-10 ${
-                        isAller ? "bg-brand" : "bg-ink"
+                        isAller ? (e.parking_couvert ? "bg-brand-deep" : "bg-brand") : "bg-ink"
                       }`}
                       style={{
                         top: e.top,
@@ -107,6 +107,7 @@ export default function WeekGrid({ days, evenements }) {
                     >
                       <div className="font-semibold tabular-nums">{e.heure || "—"}</div>
                       <div className="truncate">{e.client || "Client"}</div>
+                      {e.options?.length > 0 && <div className="truncate opacity-80">{e.options.join(", ")}</div>}
                     </Link>
                   );
                 })}

@@ -96,6 +96,9 @@ export default async function PlanningPage({ searchParams }) {
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-ink inline-block" /> Sortie (restitution)
           </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-brand-deep inline-block" /> Entrée avec parking couvert
+          </span>
         </div>
         <WeekGrid days={days} evenements={evenements} />
       </Card>

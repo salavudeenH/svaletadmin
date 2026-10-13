@@ -18,6 +18,8 @@ export default async function ParkingsPage() {
           <tr>
             <Th>Nom</Th>
             <Th>Adresse</Th>
+            <Th>Type</Th>
+            <Th>Places</Th>
             <Th>Ordre</Th>
             <Th>Statut</Th>
             <Th></Th>
@@ -32,6 +34,8 @@ export default async function ParkingsPage() {
                 </Link>
               </Td>
               <Td className="text-gray-500">{p.adresse || "-"}</Td>
+              <Td>{p.type === "couvert" ? "Couvert" : "Extérieur"}</Td>
+              <Td className="font-medium">{p.places ?? 0}</Td>
               <Td>{p.ordre}</Td>
               <Td>
                 <Badge variant={p.actif ? "success" : "neutral"}>{p.actif ? "Actif" : "Inactif"}</Badge>
@@ -47,7 +51,7 @@ export default async function ParkingsPage() {
           ))}
           {parkings.length === 0 && (
             <tr>
-              <Td colSpan={5} className="py-8 text-center text-gray-400">
+              <Td colSpan={7} className="py-8 text-center text-gray-400">
                 Aucun parking enregistré.
               </Td>
             </tr>

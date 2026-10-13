@@ -30,6 +30,30 @@ export default function ParkingForm({ parking, action, submitLabel = "Enregistre
         />
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+          <select
+            name="type"
+            defaultValue={parking?.type || "exterieur"}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          >
+            <option value="exterieur">Non couvert (extérieur)</option>
+            <option value="couvert">Couvert</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Places disponibles</label>
+          <input
+            name="places"
+            type="number"
+            min="0"
+            defaultValue={parking?.places ?? 0}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          />
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Ordre d'affichage</label>
         <input

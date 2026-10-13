@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { valetApiFetch } from "@/lib/valetApi";
 import { valetLogoutAction } from "../actions";
 import CoursesList from "./CoursesList";
@@ -27,18 +28,24 @@ function fmtDateFR(iso) {
 export default async function VoiturierCoursesPage({ searchParams }) {
   const params = await searchParams;
   const today = todayISO();
-  const minDate = addDays(today, -3);
-  const maxDate = addDays(today, 3);
-  const requested = params?.date || today;
-  // Le voiturier peut naviguer jusqu'à 3 jours avant/après aujourd'hui, pas au-delà.
+  const { data: valet } = await valetApiFetch("/me");
+  // Date mémorisée (cookie posé par la liste) : au retour depuis le détail d'une course, on retrouve
+  // le jour qu'on consultait au lieu de revenir sur aujourd'hui.
+  const cookieStore = await cookies();
+  const dateMemorisee = cookieStore.get("voiturier_date")?.value;
+  const requested = params?.date || (/^\d{4}-\d{2}-\d{2}$/.test(dateMemorisee || "") ? dateMemorisee : today);
+  // Un voiturier peut naviguer jusqu'à 3 jours avant/après aujourd'hui, pas au-delà.
+  // Un voiturier manager n'a pas cette limite.
+  const estManager = Boolean(valet.is_manager);
+  const minDate = estManager ? "0000-01-01" : addDays(today, -3);
+  const maxDate = estManager ? "9999-12-31" : addDays(today, 3);
   const date = requested < minDate ? minDate : requested > maxDate ? maxDate : requested;
   const prevDate = addDays(date, -1);
   const nextDate = addDays(date, 1);
   const canGoPrev = prevDate >= minDate;
   const canGoNext = nextDate <= maxDate;
 
-  const [{ data: valet }, { data: courses }, { data: bloquantes }] = await Promise.all([
-    valetApiFetch("/me"),
+  const [{ data: courses }, { data: bloquantes }] = await Promise.all([
     valetApiFetch(`/courses?date=${date}`),
     valetApiFetch("/me/courses-bloquantes"),
   ]);
@@ -78,13 +85,13 @@ export default async function VoiturierCoursesPage({ searchParams }) {
 
       {date !== today && (
         <div className="px-4 py-1.5 text-center">
-          <Link href="/voiturier" className="text-xs text-brand hover:underline">
+          <Link href={`/voiturier?date=${today}`} className="text-xs text-brand hover:underline">
             Revenir à aujourd'hui
           </Link>
         </div>
       )}
 
-      <CoursesList courses={courses} monValetId={valet._id} />
+      <CoursesList courses={courses} monValetId={valet._id} date={date} />
     </div>
   );
 }

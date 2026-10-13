@@ -16,6 +16,7 @@ const TEXT_FIELDS = [
   "heure_aller",
   "heure_retour",
   "parking_nom",
+  "parking_suggere",
   "vol_retour_ville_depart",
   "vol_retour_compagnie",
   "incident_description",
@@ -26,6 +27,16 @@ const DATE_FIELDS = ["date_aller", "date_retour", "date_retour_annoncee"];
 const BOOLEAN_FIELDS = ["sky_priority", "bagages_soute", "retour_confirme_par_client", "incident_signale"];
 
 const NUMBER_FIELDS = ["kilometrage_depot", "kilometrage_retour"];
+
+export async function resetCourseAction(id, leg) {
+  try {
+    await apiFetch(`/admin/reservations/${id}/reset-course`, { method: "POST", body: { leg } });
+  } catch (err) {
+    return { error: err.message || "Erreur lors de la remise à zéro." };
+  }
+  revalidatePath(`/reservations/${id}`);
+  return { success: true };
+}
 
 export async function updateReservationAction(id, prevState, formData) {
   const body = {

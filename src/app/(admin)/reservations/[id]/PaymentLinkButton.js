@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { sendPaymentLinkAction } from "./payment-actions";
 
-export default function PaymentLinkButton({ reservationId }) {
+export default function PaymentLinkButton({ reservationId, defaultEmail = "" }) {
+  const [email, setEmail] = useState(defaultEmail);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -13,7 +14,7 @@ export default function PaymentLinkButton({ reservationId }) {
     setLoading(true);
     setError(null);
     setResult(null);
-    const res = await sendPaymentLinkAction(reservationId);
+    const res = await sendPaymentLinkAction(reservationId, email.trim());
     if (res.error) {
       setError(res.error);
     } else {
@@ -35,6 +36,16 @@ export default function PaymentLinkButton({ reservationId }) {
         Génère un lien de paiement Stripe et l'envoie automatiquement par email au client. Dès que le paiement est
         confirmé, la réservation passe en statut "Payée" et l'email de confirmation part automatiquement.
       </p>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Envoyer à l'adresse</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+        />
+      </div>
 
       <button
         onClick={handleClick}

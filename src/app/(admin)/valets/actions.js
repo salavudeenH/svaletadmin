@@ -14,6 +14,7 @@ function valetPayloadFromForm(formData) {
     siret: formData.get("siret")?.toString().trim() || undefined,
     adresse: formData.get("adresse")?.toString().trim() || undefined,
     pin: formData.get("pin")?.toString().trim() || undefined,
+    is_manager: formData.get("is_manager") === "on",
   };
 }
 

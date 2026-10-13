@@ -27,10 +27,15 @@ const FILTRES = [
   { key: "termine", label: "Terminé" },
 ];
 
-export default function CoursesList({ courses, monValetId }) {
+export default function CoursesList({ courses, monValetId, date }) {
   const router = useRouter();
   const [statuts, setStatuts] = useState({});
   const [filtre, setFiltre] = useState("toutes");
+
+  // Mémorise le jour consulté pour y revenir après être entré dans le détail d'une course.
+  useEffect(() => {
+    if (date) document.cookie = `voiturier_date=${date}; path=/; max-age=1800; samesite=lax`;
+  }, [date]);
 
   // "En cours" = le questionnaire a été commencé (progression dans le localStorage) mais pas
   // encore terminé — seulement détectable pour MES propres courses (le localStorage d'un autre
@@ -91,7 +96,7 @@ export default function CoursesList({ courses, monValetId }) {
 
         {filtered.map((c) => {
           const isAller = c.leg === "aller";
-          const barColor = isAller ? "bg-brand" : "bg-ink";
+          const barColor = isAller ? (c.parking_couvert ? "bg-brand-deep" : "bg-brand") : "bg-ink";
           const statut = statuts[courseKey(c)] || "a_venir";
           const cfg = STATUT_CONFIG[statut];
           const estAMoi = c.valet?._id === monValetId;
@@ -120,8 +125,31 @@ export default function CoursesList({ courses, monValetId }) {
                     {c.vehicule?.marque} {c.vehicule?.modele} · {c.vehicule?.plaque}
                   </div>
                   {c.parking_nom && <div className="text-xs text-gray-400 mt-0.5">{c.parking_nom}</div>}
+                  {c.options?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {c.options.map((o) => (
+                        <span
+                          key={o.code || o.nom}
+                          className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                            o.code === "covered" || /couvert/i.test(o.nom || "")
+                              ? "bg-brand-deep text-white"
+                              : "bg-brand-light text-brand-dark"
+                          }`}
+                        >
+                          {o.nom}
+                          {o.qty > 1 ? ` ×${o.qty}` : ""}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="shrink-0 text-right">
+                  {c.parking_suggere && !c.parking_nom && (
+                    <div className="mb-2">
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">Parking suggéré</div>
+                      <div className="text-sm font-semibold text-brand-dark">{c.parking_suggere}</div>
+                    </div>
+                  )}
                   <div className="text-[10px] text-gray-400 uppercase tracking-wide">Voiturier</div>
                   {c.valet ? (
                     estAMoi ? (

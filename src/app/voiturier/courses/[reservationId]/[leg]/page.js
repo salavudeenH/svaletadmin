@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { valetApiFetch } from "@/lib/valetApi";
-import { User, Phone, Car, Plane, KeyRound, ParkingCircle, Luggage } from "lucide-react";
+import { User, Phone, Car, Plane, KeyRound, ParkingCircle, Luggage, Sparkles } from "lucide-react";
 import ConfirmButton from "./ConfirmButton";
 import PhotosButton from "./PhotosButton";
 import { Row, Badge } from "../../../_components/Row";
@@ -18,7 +18,7 @@ export default async function VoiturierCourseDetailPage({ params }) {
   ]);
 
   const isAller = c.leg === "aller";
-  const barColor = isAller ? "bg-brand" : "bg-ink";
+  const barColor = isAller ? (c.parking_couvert ? "bg-brand-deep" : "bg-brand") : "bg-ink";
   const estAMoi = c.valet?._id === moi._id;
 
   return (
@@ -87,6 +87,27 @@ export default async function VoiturierCourseDetailPage({ params }) {
         </div>
       </Row>
 
+      {c.options?.length > 0 && (
+        <Row icon={<Sparkles size={18} />}>
+          <div className="text-xs text-gray-400">Options</div>
+          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+            {c.options.map((o) => (
+              <span
+                key={o.code || o.nom}
+                className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${
+                  o.code === "covered" || /couvert/i.test(o.nom || "")
+                    ? "bg-brand-deep text-white"
+                    : "bg-brand-light text-brand-dark"
+                }`}
+              >
+                {o.nom}
+                {o.qty > 1 ? ` ×${o.qty}` : ""}
+              </span>
+            ))}
+          </div>
+        </Row>
+      )}
+
       {!isAller && (c.sky_priority !== null || c.bagages_soute !== null) && (
         <Row icon={<Luggage size={18} />}>
           <div className="text-xs text-gray-400">Infos retour</div>
@@ -112,10 +133,20 @@ export default async function VoiturierCourseDetailPage({ params }) {
         </Row>
       )}
 
-      {c.parking_nom && (
-        <Row icon={<ParkingCircle size={18} />}>
+      {(c.parking_nom || c.parking_suggere) && (
+        <Row
+          icon={<ParkingCircle size={18} />}
+          action={
+            c.parking_suggere && (
+              <div className="text-right shrink-0">
+                <div className="text-[10px] text-gray-400 uppercase tracking-wide">Parking suggéré</div>
+                <div className="text-sm font-semibold text-brand-dark">{c.parking_suggere}</div>
+              </div>
+            )
+          }
+        >
           <div className="text-xs text-gray-400">Parking</div>
-          <div className="font-medium text-ink">{c.parking_nom}</div>
+          <div className="font-medium text-ink">{c.parking_nom || "Pas encore garé"}</div>
         </Row>
       )}
 

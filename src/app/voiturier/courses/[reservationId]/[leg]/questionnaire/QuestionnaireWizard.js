@@ -23,11 +23,12 @@ function buildSteps(leg, course, answers, suggestionNumeroCle) {
   if (leg === "retour") {
     return [
       {
-        type: "number",
-        key: "kilometrage_retour",
-        question: "Quel est le kilométrage du véhicule ?",
-        label: "Kilomètres",
-        hint: course.kilometrage_depot != null ? `Au dépôt : ${course.kilometrage_depot} km` : null,
+        type: "photos",
+        key: "photos_compteur_retour",
+        photoType: "compteur_retour",
+        question: "Prenez une photo du compteur kilométrique",
+        minPhotos: 1,
+        initial: course.photos_compteur_retour || [],
       },
       {
         type: "yesno",
@@ -51,6 +52,37 @@ function buildSteps(leg, course, answers, suggestionNumeroCle) {
       },
     ];
   }
+
+  // Photos : toujours en toute fin (le voiturier n'a parfois pas de réseau sur place).
+  const photoSteps = [
+    {
+      type: "photos",
+      key: "photos_voiture_garee",
+      photoType: "voiture_garee",
+      question: "Prenez une photo du véhicule garé",
+      minPhotos: 1,
+      initial: course.photos_voiture_garee || [],
+    },
+    {
+      type: "photos",
+      key: "photos_cle_coffre",
+      photoType: "cle_coffre",
+      question: "Prenez une photo du dépôt de la clé au coffre",
+      minPhotos: 1,
+      initial: course.photos_cle_coffre || [],
+    },
+    {
+      type: "photos",
+      key: "photos_prise_en_charge",
+      photoType: "prise_en_charge",
+      question: "Prenez plusieurs photos du véhicule au dépose-minute",
+      minPhotos: 30,
+      initial: course.photos_prise_en_charge || [],
+    },
+  ];
+
+  // Infos clé + parking validées : l'étape est verrouillée, il ne reste que les photos.
+  if (answers.__locked) return photoSteps;
 
   const rp = course.retour_prevu || {};
   return [
@@ -106,41 +138,30 @@ function buildSteps(leg, course, answers, suggestionNumeroCle) {
     },
     {
       type: "photos",
-      key: "photos_prise_en_charge",
-      photoType: "prise_en_charge",
-      question: "Prenez plusieurs photos du véhicule au dépose-minute",
-      minPhotos: 30,
-    },
-    {
-      type: "number",
-      key: "kilometrage_depot",
-      question: "Quel est le kilométrage du véhicule ?",
-      label: "Kilomètres",
+      key: "photos_compteur_depot",
+      photoType: "compteur_depot",
+      question: "Prenez une photo du compteur kilométrique",
+      minPhotos: 1,
+      initial: course.photos_compteur_depot || [],
     },
     {
       type: "parking",
       keys: ["parking_nom", "numero_cle"],
       question: "Où avez-vous garé le véhicule ?",
-      initials: [course.parking_nom || "", course.numero_cle || suggestionNumeroCle || ""],
+      initials: [course.parking_nom || course.parking_suggere || "", course.numero_cle || suggestionNumeroCle || ""],
     },
-    {
-      type: "photos",
-      key: "photos_voiture_garee",
-      photoType: "voiture_garee",
-      question: "Prenez une photo du véhicule garé",
-    },
-    {
-      type: "photos",
-      key: "photos_cle_coffre",
-      photoType: "cle_coffre",
-      question: "Prenez une photo du dépôt de la clé au coffre",
-    },
+    ...photoSteps,
   ];
 }
 
 function initialAnswersFromCourse(leg, course, suggestionNumeroCle) {
   const init = {};
-  for (const s of buildSteps(leg, course, {}, suggestionNumeroCle)) {
+  if (leg === "aller" && course.infos_validees_le) init.__locked = true;
+  const allSteps = [
+    ...buildSteps(leg, course, {}, suggestionNumeroCle),
+    ...(leg === "aller" ? buildSteps(leg, course, { __locked: true }, suggestionNumeroCle) : []),
+  ];
+  for (const s of allSteps) {
     if (s.type === "text2" || s.type === "parking") {
       s.keys.forEach((k, i) => (init[k] = s.initials[i]));
     } else if (s.initial !== undefined) {
@@ -187,6 +208,8 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
   const [stepIndex, setStepIndex] = useState(() => {
     const saved = resolveSavedProgress(readSavedProgress(key), savedProgression);
     if (!saved) return 0;
+    // Course verrouillée mais progression enregistrée avant le verrouillage (ex: autre téléphone) : début des photos.
+    if (course.infos_validees_le && !saved.answers?.__locked) return 0;
     const mergedAnswers = { ...initialAnswersFromCourse(leg, course, suggestionNumeroCle), ...saved.answers };
     const restoredSteps = buildSteps(leg, course, mergedAnswers, suggestionNumeroCle);
     return Math.min(saved.stepIndex || 0, restoredSteps.length - 1);
@@ -233,6 +256,32 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
   }
 
   async function goNext() {
+    if (leg === "aller" && step.type === "parking" && !answers.__locked) {
+      setSubmitting(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/voiturier/courses/${reservationId}/aller/infos-cle`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(answers),
+        });
+        const json = await res.json();
+        if (res.status === 409 && json.suggestion) {
+          setAnswer("numero_cle", json.suggestion);
+          setError(`${json.error} — nouveau numéro proposé : ${json.suggestion}`);
+          return;
+        }
+        if (!res.ok || json.error) throw new Error(json.error || "Erreur lors de l'enregistrement");
+        // Verrouillage : les infos sont enregistrées, il ne reste que les photos.
+        setAnswers((prev) => ({ ...prev, __locked: true }));
+        setStepIndex(0);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
     if (!isLast) {
       setStepIndex((i) => i + 1);
       return;
@@ -297,8 +346,19 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
           ✕
         </button>
       </div>
-      <div className="text-white/80 text-xs mb-8">
+      <div className="text-white/80 text-xs mb-1">
         De : <span className="font-semibold text-white">Roissy CDG</span> à Parking
+      </div>
+      <div className="text-white/80 text-xs mb-8">
+        Retour du client :{" "}
+        <span className="font-semibold text-white">
+          {fmtDateFR(
+            answers.retour_confirme_par_client === false && answers.date_retour_annoncee
+              ? answers.date_retour_annoncee
+              : course.retour_prevu?.date_retour
+          )}{" "}
+          à {answers.heure_retour || course.retour_prevu?.heure_retour || "—"}
+        </span>
       </div>
 
       <StepRenderer

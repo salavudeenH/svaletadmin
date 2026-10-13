@@ -214,6 +214,25 @@ export default function ReservationForm({ reservation, valets, parkings, action 
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Parking suggéré (visible du voiturier)</label>
+            <select
+              name="parking_suggere"
+              defaultValue={reservation.parking_suggere || ""}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            >
+              <option value="">Aucune suggestion</option>
+              {parkings.map((p) => (
+                <option key={p._id} value={p.nom}>
+                  {p.nom}
+                  {p.type === "couvert" ? " (couvert)" : ""}
+                </option>
+              ))}
+              {reservation.parking_suggere && !parkings.some((p) => p.nom === reservation.parking_suggere) && (
+                <option value={reservation.parking_suggere}>{reservation.parking_suggere} (inactif)</option>
+              )}
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Parking (voiture garée)</label>
             <select
               name="parking_nom"

@@ -108,6 +108,22 @@ export default function ValetForm({ valet, action, submitLabel = "Enregistrer", 
         </p>
       </div>
 
+      <label className="flex items-start gap-2 text-sm text-gray-700">
+        <input
+          type="checkbox"
+          name="is_manager"
+          disabled={readOnly}
+          defaultChecked={Boolean(valet?.is_manager)}
+          className="mt-0.5 rounded border-gray-300 text-brand focus:ring-brand"
+        />
+        <span>
+          Voiturier manager
+          <span className="block text-xs text-gray-400">
+            Peut consulter les courses au-delà de 3 jours (avant/après) dans l'espace voiturier.
+          </span>
+        </span>
+      </label>
+
       {state?.error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{state.error}</p>
       )}

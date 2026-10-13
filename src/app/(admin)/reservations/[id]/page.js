@@ -9,6 +9,8 @@ import InvoiceButton from "./InvoiceButton";
 import EmailActionsCard from "./EmailActionsCard";
 import NotificationBanner from "./NotificationBanner";
 import PhotosManager from "./PhotosManager";
+import ResetCourseButton from "./ResetCourseButton";
+import ComplementsCard from "./ComplementsCard";
 import { updateReservationAction } from "./actions";
 
 function BooleanBadge({ value }) {
@@ -21,12 +23,15 @@ function BooleanBadge({ value }) {
 export default async function ReservationDetailPage({ params }) {
   const { id } = await params;
 
-  const [{ data: reservation }, { data: valets }, { data: parkings }, { data: notifications }] = await Promise.all([
+  const [{ data: reservation }, { data: valets }, { data: parkings }, { data: notifications }, { data: allOptions }] = await Promise.all([
     apiFetch(`/admin/reservations/${id}`),
     apiFetch(`/admin/valets?actif=true`),
     apiFetch(`/admin/parkings?actif=true`),
     apiFetch(`/admin/notifications?reservation=${id}`),
+    // Réservé aux admins complets : un manager n'a pas la liste des options (la carte reste masquée pour lui).
+    apiFetch(`/admin/options`).catch(() => ({ data: [] })),
   ]);
+  const optionsActives = (allOptions || []).filter((o) => o.actif);
   const notificationsNonLues = notifications.filter((n) => !n.lue);
 
   const boundAction = updateReservationAction.bind(null, id);
@@ -146,7 +151,18 @@ export default async function ReservationDetailPage({ params }) {
 
       {!["payee", "terminee", "annulee"].includes(reservation.statut) && (
         <div className="mb-6">
-          <PaymentLinkButton reservationId={reservation._id} />
+          <PaymentLinkButton reservationId={reservation._id} defaultEmail={reservation.contact_email || reservation.user?.email || ""} />
+        </div>
+      )}
+
+      {reservation.statut !== "annulee" && (
+        <div className="mb-6">
+          <ComplementsCard
+            reservationId={reservation._id}
+            options={optionsActives}
+            defaultEmail={reservation.contact_email || reservation.user?.email || ""}
+            supplements={reservation.supplements || []}
+          />
         </div>
       )}
 
@@ -158,7 +174,10 @@ export default async function ReservationDetailPage({ params }) {
         <h2 className="font-semibold text-ink mb-3">Infos voiturier</h2>
 
         <div className="mb-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Prise en charge</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center justify-between">
+            Prise en charge
+            <ResetCourseButton reservationId={reservation._id} leg="aller" />
+          </h3>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-sm">
             <dt className="text-gray-500">Client rencontré à</dt>
             <dd>
@@ -221,12 +240,21 @@ export default async function ReservationDetailPage({ params }) {
                 keys: reservation.photos_cle_coffre || [],
                 urls: reservation.photos_cle_coffre_urls || [],
               },
+              {
+                type: "compteur_depot",
+                label: "Photo compteur (dépôt)",
+                keys: reservation.photos_compteur_depot || [],
+                urls: reservation.photos_compteur_depot_urls || [],
+              },
             ]}
           />
         </div>
 
         <div className="pt-4 border-t border-gray-100">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Restitution</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center justify-between">
+            Restitution
+            <ResetCourseButton reservationId={reservation._id} leg="retour" />
+          </h3>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-sm">
             <dt className="text-gray-500">Client rencontré à</dt>
             <dd>
@@ -254,6 +282,18 @@ export default async function ReservationDetailPage({ params }) {
           ) : (
             <p className="text-gray-400 text-sm mt-3">Signature non renseignée</p>
           )}
+
+          <PhotosManager
+            reservationId={reservation._id}
+            sections={[
+              {
+                type: "compteur_retour",
+                label: "Photo compteur (retour)",
+                keys: reservation.photos_compteur_retour || [],
+                urls: reservation.photos_compteur_retour_urls || [],
+              },
+            ]}
+          />
         </div>
       </Card>
 

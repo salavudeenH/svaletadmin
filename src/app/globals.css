@@ -14,6 +14,7 @@
   --color-brand: #e2752b;
   --color-brand-dark: #c9631f;
   --color-brand-light: #fbeee3;
+  --color-brand-deep: #9a4510; /* orange foncé : prise en charge avec parking couvert */
   --color-ink: #211c17;
   --color-ink-light: #3a3129;
   --radius-card: 12px;

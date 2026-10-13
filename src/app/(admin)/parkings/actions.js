@@ -9,6 +9,8 @@ function payloadFromForm(formData) {
     nom: formData.get("nom")?.toString().trim(),
     adresse: formData.get("adresse")?.toString().trim() || undefined,
     ordre: Number(formData.get("ordre") || 0),
+    type: formData.get("type")?.toString() === "couvert" ? "couvert" : "exterieur",
+    places: Number(formData.get("places") || 0),
   };
 }
 
