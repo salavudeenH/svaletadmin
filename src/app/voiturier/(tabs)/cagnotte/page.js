@@ -3,6 +3,7 @@ import { valetApiFetch } from "@/lib/valetApi";
 import { fmtPrice } from "@/lib/creneaux";
 import PageHeader from "../../_components/PageHeader";
 import Pager from "../../_components/Pager";
+import FacturesDownload from "./FacturesDownload";
 
 function currentMois() {
   const now = new Date();
@@ -27,7 +28,10 @@ export default async function VoiturierCagnottePage({ searchParams }) {
   const prevMois = addMonths(mois, -1);
   const nextMois = addMonths(mois, 1);
 
-  const { data: cagnotte } = await valetApiFetch(`/me/cagnotte?annee=${annee}&mois=${moisNum}`);
+  const [{ data: cagnotte }, { data: factures }] = await Promise.all([
+    valetApiFetch(`/me/cagnotte?annee=${annee}&mois=${moisNum}`),
+    valetApiFetch(`/me/factures?annee=${annee}&mois=${moisNum}`),
+  ]);
   const entierementPaye = cagnotte.total > 0 && cagnotte.restant === 0;
 
   return (
@@ -62,6 +66,23 @@ export default async function VoiturierCagnottePage({ searchParams }) {
             </div>
           </div>
         )}
+
+        <Link
+          href={`/voiturier/cagnotte/frais?mois=${mois}`}
+          className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3 flex items-center justify-between"
+        >
+          <span className="text-sm text-gray-700">
+            Mes frais
+            {cagnotte.nb_frais_en_attente > 0 && (
+              <span className="ml-2 text-xs font-medium bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">
+                {cagnotte.nb_frais_en_attente} en attente
+              </span>
+            )}
+          </span>
+          <span className="text-sm font-semibold text-brand">Ajouter / voir →</span>
+        </Link>
+
+        <FacturesDownload factures={factures} />
 
         <div className="mt-4 text-center">
           <span

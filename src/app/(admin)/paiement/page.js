@@ -113,6 +113,7 @@ export default async function PaiementPage() {
           <div className="space-y-8">
             {moisImpayes.map((m) => {
               const idsDuMois = m.groupes.flatMap((g) => g.creneaux.map((c) => c._id));
+              const fraisIdsDuMois = m.groupes.flatMap((g) => (g.frais || []).map((f) => f._id));
               const label = moisLabel(m.annee, m.mois);
               return (
                 <section key={`${m.annee}-${m.mois}`}>
@@ -125,6 +126,7 @@ export default async function PaiementPage() {
                       {m.groupes.length > 1 && (
                         <MarquerPayeButton
                           ids={idsDuMois}
+                          fraisIds={fraisIdsDuMois}
                           label={`Tout marquer payé — ${label}`}
                           confirmMessage={`Marquer les ${idsDuMois.length} créneau(x) de ${label} (tous voituriers) comme payés ?`}
                         />
@@ -135,6 +137,7 @@ export default async function PaiementPage() {
                   <div className="space-y-5">
                     {m.groupes.map((g) => {
                       const ids = g.creneaux.map((c) => c._id);
+                      const fraisIds = (g.frais || []).map((f) => f._id);
                       return (
                         <div key={g.valet._id} className="bg-white rounded-card border border-gray-200 overflow-hidden">
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 py-4 border-b border-gray-100">
@@ -150,11 +153,24 @@ export default async function PaiementPage() {
                               <span className="text-xl font-bold text-brand">{fmtPrice(g.total)}</span>
                               <MarquerPayeButton
                                 ids={ids}
-                                confirmMessage={`Marquer ${ids.length} créneau(x) de ${g.valet.prenom} ${g.valet.nom} (${label}) comme payés ?`}
+                                fraisIds={fraisIds}
+                                confirmMessage={`Marquer ${ids.length} créneau(x)${fraisIds.length ? ` et ${fraisIds.length} frais` : ""} de ${g.valet.prenom} ${g.valet.nom} (${label}) comme payés ?`}
                               />
                             </div>
                           </div>
                           <CreneauxTable creneaux={g.creneaux} />
+                          {(g.frais || []).length > 0 && (
+                            <div className="border-t border-gray-100 bg-gray-50/50">
+                              {g.frais.map((f) => (
+                                <div key={f._id} className="flex items-center justify-between px-4 sm:px-5 py-2.5 text-sm">
+                                  <span className="text-gray-500">
+                                    {fmtDateFR(f.date)} · Frais : {f.libelle}
+                                  </span>
+                                  <span className="font-medium">{fmtPrice(f.montant)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
