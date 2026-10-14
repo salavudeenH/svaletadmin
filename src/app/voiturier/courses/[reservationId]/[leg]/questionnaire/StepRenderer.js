@@ -1,5 +1,6 @@
 "use client";
 
+import CarSidesGuide from "./CarSidesGuide";
 import SignaturePad from "./SignaturePad";
 import PhotosField from "./PhotosField";
 
@@ -180,6 +181,7 @@ export default function StepRenderer({
       {step.type === "photos" && (
         <>
           <h1 className="text-white text-xl font-bold mb-6">{step.question}</h1>
+          {step.key === "photos_prise_en_charge" && <CarSidesGuide />}
           {step.minPhotos && (
             <p className="text-white/70 text-sm mb-3">
               {(answers[step.key] || []).length} / {step.minPhotos} photos minimum

@@ -53,8 +53,24 @@ function buildSteps(leg, course, answers, suggestionNumeroCle) {
     ];
   }
 
-  // Photos : toujours en toute fin (le voiturier n'a parfois pas de réseau sur place).
+  // Ordre : photo du compteur, photos du véhicule sur tous les côtés, voiture garée, clé au coffre.
   const photoSteps = [
+    {
+      type: "photos",
+      key: "photos_compteur_depot",
+      photoType: "compteur_depot",
+      question: "Prenez une photo du compteur kilométrique",
+      minPhotos: 1,
+      initial: course.photos_compteur_depot || [],
+    },
+    {
+      type: "photos",
+      key: "photos_prise_en_charge",
+      photoType: "prise_en_charge",
+      question: "Prenez plusieurs photos de la voiture sur tous les côtés (avant, arrière, gauche, droite)",
+      minPhotos: 30,
+      initial: course.photos_prise_en_charge || [],
+    },
     {
       type: "photos",
       key: "photos_voiture_garee",
@@ -70,14 +86,6 @@ function buildSteps(leg, course, answers, suggestionNumeroCle) {
       question: "Prenez une photo du dépôt de la clé au coffre",
       minPhotos: 1,
       initial: course.photos_cle_coffre || [],
-    },
-    {
-      type: "photos",
-      key: "photos_prise_en_charge",
-      photoType: "prise_en_charge",
-      question: "Prenez plusieurs photos du véhicule au dépose-minute",
-      minPhotos: 30,
-      initial: course.photos_prise_en_charge || [],
     },
   ];
 
@@ -136,21 +144,13 @@ function buildSteps(leg, course, answers, suggestionNumeroCle) {
       consent:
         "En signant, j'accepte les CGV sans réserve et je reconnais confier mon véhicule à SVALET jusqu'à mon retour de voyage et autorise mon voiturier à le conduire et à le stationner.",
     },
-    {
-      type: "photos",
-      key: "photos_compteur_depot",
-      photoType: "compteur_depot",
-      question: "Prenez une photo du compteur kilométrique",
-      minPhotos: 1,
-      initial: course.photos_compteur_depot || [],
-    },
+    ...photoSteps,
     {
       type: "parking",
       keys: ["parking_nom", "numero_cle"],
       question: "Où avez-vous garé le véhicule ?",
       initials: [course.parking_nom || course.parking_suggere || "", course.numero_cle || suggestionNumeroCle || ""],
     },
-    ...photoSteps,
   ];
 }
 
@@ -256,7 +256,7 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
   }
 
   async function goNext() {
-    if (leg === "aller" && step.type === "parking" && !answers.__locked) {
+    if (leg === "aller" && step.type === "parking" && !answers.__locked && !isLast) {
       setSubmitting(true);
       setError(null);
       try {
