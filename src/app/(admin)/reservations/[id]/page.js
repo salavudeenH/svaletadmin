@@ -11,6 +11,7 @@ import NotificationBanner from "./NotificationBanner";
 import PhotosManager from "./PhotosManager";
 import ResetCourseButton from "./ResetCourseButton";
 import ComplementsCard from "./ComplementsCard";
+import SuiviSelect from "./SuiviSelect";
 import { updateReservationAction } from "./actions";
 
 function BooleanBadge({ value }) {
@@ -48,6 +49,11 @@ export default async function ReservationDetailPage({ params }) {
             Réservation {reservation.numero_reservation || reservation._id.slice(-6)}
           </h1>
           <Badge variant={suiviVoiturier(reservation).variant}>{suiviVoiturier(reservation).label}</Badge>
+          <SuiviSelect
+            key={suiviVoiturier(reservation).label}
+            reservationId={reservation._id}
+            current={reservation.retour_confirme_le ? "termine" : reservation.aller_confirme_le ? "en_cours" : "a_venir"}
+          />
         </div>
         <InvoiceButton reservation={reservation} />
       </div>

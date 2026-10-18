@@ -28,6 +28,17 @@ const BOOLEAN_FIELDS = ["sky_priority", "bagages_soute", "retour_confirme_par_cl
 
 const NUMBER_FIELDS = ["kilometrage_depot", "kilometrage_retour"];
 
+export async function setSuiviAction(id, suivi) {
+  try {
+    await apiFetch(`/admin/reservations/${id}/suivi`, { method: "PATCH", body: { suivi } });
+  } catch (err) {
+    return { error: err.message || "Erreur lors du changement de statut." };
+  }
+  revalidatePath(`/reservations/${id}`);
+  revalidatePath("/reservations");
+  return { success: true };
+}
+
 export async function resetCourseAction(id, leg) {
   try {
     await apiFetch(`/admin/reservations/${id}/reset-course`, { method: "POST", body: { leg } });

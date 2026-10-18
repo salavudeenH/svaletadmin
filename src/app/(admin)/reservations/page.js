@@ -12,6 +12,7 @@ import InvoiceListButton from "./InvoiceListButton";
 export default async function ReservationsPage({ searchParams }) {
   const params = await searchParams;
   const statut = params?.statut || "";
+  const suivi = ["a_venir", "en_cours", "termine"].includes(params?.suivi) ? params.suivi : "";
   const search = params?.search || "";
   const valet = params?.valet || "";
   const date_debut = params?.date_debut || "";
@@ -22,10 +23,10 @@ export default async function ReservationsPage({ searchParams }) {
   const tri = params?.tri === "asc" || params?.tri === "desc" ? params.tri : mois ? "asc" : "desc";
   const page = params?.page || "1";
 
-  const filterParams = { statut, search, valet, date_debut, date_fin, parking, mois, vue, tri: params?.tri || "" };
+  const filterParams = { statut, suivi, search, valet, date_debut, date_fin, parking, mois, vue, tri: params?.tri || "" };
 
   const query = new URLSearchParams();
-  Object.entries({ statut, search, valet, date_debut, date_fin, parking, mois, vue, tri }).forEach(([key, value]) => {
+  Object.entries({ statut, suivi, search, valet, date_debut, date_fin, parking, mois, vue, tri }).forEach(([key, value]) => {
     if (value) query.set(key, value);
   });
   query.set("page", page);
@@ -63,6 +64,16 @@ export default async function ReservationsPage({ searchParams }) {
                 {label}
               </option>
             ))}
+          </Select>
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Suivi voiturier</label>
+          <Select name="suivi" defaultValue={suivi}>
+            <option value="">Tous</option>
+            <option value="a_venir">À venir</option>
+            <option value="en_cours">En cours</option>
+            <option value="termine">Terminé</option>
           </Select>
         </div>
 
@@ -122,7 +133,7 @@ export default async function ReservationsPage({ searchParams }) {
         </div>
 
         <Button type="submit">Filtrer</Button>
-        {(statut || search || valet || date_debut || date_fin || parking || mois || vue || params?.tri) && (
+        {(statut || suivi || search || valet || date_debut || date_fin || parking || mois || vue || params?.tri) && (
           <Link href="/reservations" className="text-sm text-gray-500 hover:text-brand hover:underline px-1 py-2">
             Réinitialiser
           </Link>
