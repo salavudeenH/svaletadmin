@@ -74,17 +74,33 @@ export async function telechargerFacture(facture) {
   });
 
   let ty = doc.lastAutoTable.finalY + 8;
-  doc.setFont("helvetica", "bold");
+  const acomptes = facture.acomptes || [];
   doc.setFontSize(11);
-  doc.text("Total à payer", R - 60, ty);
-  doc.text(fmtEur(facture.total), R, ty, { align: "right" });
+  if (acomptes.length > 0) {
+    doc.setFont("helvetica", "normal");
+    doc.text("Total de la prestation", R - 75, ty);
+    doc.text(fmtEur(facture.total), R, ty, { align: "right" });
+    for (const a of acomptes) {
+      ty += 6;
+      doc.text(`Acompte versé le ${new Date(a.date).toLocaleDateString("fr-FR")}`, R - 75, ty);
+      doc.text(`- ${fmtEur(a.montant)}`, R, ty, { align: "right" });
+    }
+    ty += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("Reste à payer", R - 75, ty);
+    doc.text(fmtEur(facture.net_a_payer ?? facture.total), R, ty, { align: "right" });
+  } else {
+    doc.setFont("helvetica", "bold");
+    doc.text("Total à payer", R - 60, ty);
+    doc.text(fmtEur(facture.total), R, ty, { align: "right" });
+  }
 
   ty += 12;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text("TVA non applicable, art. 293 B du Code Général des Impôts.", L, ty);
   ty += 5;
-  doc.text(`Facture réglée le ${new Date(facture.date_facture).toLocaleDateString("fr-FR")}.`, L, ty);
+  doc.text(`Facture soldée le ${new Date(facture.date_facture).toLocaleDateString("fr-FR")}.`, L, ty);
 
   doc.save(`${facture.numero}.pdf`);
 }

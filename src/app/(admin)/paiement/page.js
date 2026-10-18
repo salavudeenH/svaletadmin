@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api";
 import { fmtPrice, fmtDateFR, LEG_LABELS } from "@/lib/creneaux";
 import MarquerPayeButton from "./MarquerPayeButton";
+import VersementBox from "./VersementBox";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 
@@ -33,7 +34,7 @@ function groupByMois(rows) {
     if (!map.has(key)) map.set(key, { annee: row.annee, mois: row.mois, groupes: [], total: 0 });
     const entry = map.get(key);
     entry.groupes.push(row);
-    entry.total += row.total;
+    entry.total += row.reste ?? row.total;
   }
   return Array.from(map.values());
 }
@@ -150,7 +151,14 @@ export default async function PaiementPage() {
                               </p>
                             </div>
                             <div className="flex items-center gap-4">
-                              <span className="text-xl font-bold text-brand">{fmtPrice(g.total)}</span>
+                              <div className="text-right">
+                                <span className="text-xl font-bold text-brand">{fmtPrice(g.reste ?? g.total)}</span>
+                                {g.verse > 0 && (
+                                  <div className="text-xs text-gray-400">
+                                    sur {fmtPrice(g.total)} · {fmtPrice(g.verse)} déjà versé
+                                  </div>
+                                )}
+                              </div>
                               <MarquerPayeButton
                                 ids={ids}
                                 fraisIds={fraisIds}
@@ -159,6 +167,13 @@ export default async function PaiementPage() {
                             </div>
                           </div>
                           <CreneauxTable creneaux={g.creneaux} />
+                          <VersementBox
+                            valetId={g.valet._id}
+                            annee={g.annee}
+                            mois={g.mois}
+                            reste={g.reste ?? g.total}
+                            versements={g.versements || []}
+                          />
                           {(g.frais || []).length > 0 && (
                             <div className="border-t border-gray-100 bg-gray-50/50">
                               {g.frais.map((f) => (

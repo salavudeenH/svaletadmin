@@ -67,6 +67,23 @@ export default async function VoiturierCagnottePage({ searchParams }) {
           </div>
         )}
 
+        {cagnotte.versements?.length > 0 && (
+          <div className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Versements reçus</p>
+            <ul className="space-y-1.5">
+              {cagnotte.versements.map((v) => (
+                <li key={v._id} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">
+                    {new Date(v.date).toLocaleDateString("fr-FR", { timeZone: "UTC", day: "2-digit", month: "2-digit" })}
+                    {v.note ? ` · ${v.note}` : ""}
+                  </span>
+                  <span className="font-semibold text-emerald-600">{fmtPrice(v.montant)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <Link
           href={`/voiturier/cagnotte/frais?mois=${mois}`}
           className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3 flex items-center justify-between"
