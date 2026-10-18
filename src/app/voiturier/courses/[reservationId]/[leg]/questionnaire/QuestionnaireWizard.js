@@ -184,9 +184,16 @@ function initialAnswersFromCourse(leg, course, suggestionNumeroCle) {
   return init;
 }
 
-function readSavedProgress(key) {
+// Une remise à zéro faite par l'admin (reset_le) invalide toute progression enregistrée avant elle :
+// le voiturier repart du début, comme pour un nouveau client.
+function readSavedProgress(key, resetLe) {
   try {
-    return JSON.parse(localStorage.getItem(key) || "null");
+    const saved = JSON.parse(localStorage.getItem(key) || "null");
+    if (saved && resetLe && (saved.updated_at || 0) < new Date(resetLe).getTime()) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return saved;
   } catch {
     return null;
   }
@@ -215,11 +222,11 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
   // changeait le nombre total d'étapes entre deux ouvertures du questionnaire.
   const [answers, setAnswers] = useState(() => {
     const init = initialAnswersFromCourse(leg, course, suggestionNumeroCle);
-    const saved = resolveSavedProgress(readSavedProgress(key), savedProgression);
+    const saved = resolveSavedProgress(readSavedProgress(key, course.reset_le), savedProgression);
     return saved?.answers ? { ...init, ...saved.answers } : init;
   });
   const [stepIndex, setStepIndex] = useState(() => {
-    const saved = resolveSavedProgress(readSavedProgress(key), savedProgression);
+    const saved = resolveSavedProgress(readSavedProgress(key, course.reset_le), savedProgression);
     if (!saved) return 0;
     // Course verrouillée mais progression enregistrée avant le verrouillage (ex: autre téléphone) : début des photos.
     if (course.infos_validees_le && !saved.answers?.__locked) return 0;

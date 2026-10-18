@@ -11,7 +11,7 @@ export default function ResetCourseButton({ reservationId, leg }) {
   async function handleClick() {
     if (
       !confirm(
-        `Remettre ${label} à zéro ? Confirmation, réponses, signature, kilométrage et photos seront supprimés. Le voiturier assigné et le créneau ne changent pas.`
+        `Remettre ${label} à zéro ? Confirmation, réponses, signature, kilométrage et photos seront retirés de la prise en charge (les photos sont conservées à part, dans « Photos archivées »). Le voiturier repart du début. Le voiturier assigné et le créneau ne changent pas.`
       )
     )
       return;

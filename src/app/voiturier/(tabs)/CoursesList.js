@@ -9,6 +9,23 @@ function questionnaireStorageKey(reservationId, leg) {
   return `svalet_voiturier_questionnaire_${reservationId}_${leg}`;
 }
 
+// Progression locale ignorée si l'admin a remis la course à zéro depuis.
+function progressionLocaleValide(c) {
+  const key = questionnaireStorageKey(c.reservation, c.leg);
+  const brut = localStorage.getItem(key);
+  if (!brut) return false;
+  try {
+    const saved = JSON.parse(brut);
+    if (c.reset_le && (saved.updated_at || 0) < new Date(c.reset_le).getTime()) {
+      localStorage.removeItem(key);
+      return false;
+    }
+  } catch {
+    return false;
+  }
+  return true;
+}
+
 function courseKey(c) {
   return `${c.reservation}_${c.leg}`;
 }
@@ -46,7 +63,7 @@ export default function CoursesList({ courses, monValetId, date }) {
       const estAMoi = c.valet?._id === monValetId;
       if (c.confirme_le) {
         next[courseKey(c)] = "termine";
-      } else if (estAMoi && localStorage.getItem(questionnaireStorageKey(c.reservation, c.leg))) {
+      } else if (estAMoi && progressionLocaleValide(c)) {
         next[courseKey(c)] = "en_cours";
       } else {
         next[courseKey(c)] = "a_venir";

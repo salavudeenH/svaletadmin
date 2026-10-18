@@ -303,6 +303,34 @@ export default async function ReservationDetailPage({ params }) {
         </div>
       </Card>
 
+      {(reservation.reset_historique_photos || []).some((h) => h.photos.length > 0) && (
+        <Card className="mb-6">
+          <h2 className="font-semibold text-ink mb-1">Photos archivées (remises à zéro)</h2>
+          <p className="text-xs text-gray-500 mb-3">
+            Photos prises avant une remise à zéro d'une course : conservées, mais plus rattachées à la prise en charge ou à la restitution.
+          </p>
+          <div className="space-y-4">
+            {reservation.reset_historique_photos
+              .filter((h) => h.photos.length > 0)
+              .map((h, i) => (
+                <div key={i}>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {h.leg === "aller" ? "Prise en charge" : "Restitution"} — remise à zéro le {formatDate(h.date)}
+                  </p>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                    {h.photos.map((ph, j) => (
+                      <a key={j} href={ph.url} target="_blank" rel="noreferrer">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={ph.url} alt="" loading="lazy" className="w-full aspect-square object-cover rounded-lg border border-gray-200" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </Card>
+      )}
+
       <ReservationForm reservation={reservation} valets={valets} parkings={parkings} action={boundAction} />
     </div>
   );
