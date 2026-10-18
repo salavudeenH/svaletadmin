@@ -188,6 +188,7 @@ export default function StepRenderer({
             </p>
           )}
           <PhotosField
+            key={step.key}
             reservationId={reservationId}
             leg={leg}
             photoType={step.photoType}

@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 // Aucune compression : une photo redimensionnée/recompressée peut faire disparaître une rayure
 // fine sur la carrosserie, ce qui est justement ce que ces photos doivent prouver.
-// En contrepartie, on envoie les fichiers par petits lots plutôt que tous d'un coup : au-delà
+// On envoie les fichiers par petits lots plutôt que tous d'un coup : au-delà
 // d'une poignée d'envois simultanés (ex. 60 photos sélectionnées en une fois), la connexion
 // mobile sature et les requêtes échouent en cascade — d'où le besoin de traiter par paquets et
 // d'enregistrer au fur et à mesure, pour ne jamais perdre les photos déjà envoyées avec succès.
 const BATCH_SIZE = 5;
+const MAX_APERCUS = 8;
 
 async function uploadOne(file, uploadUrl) {
   const res = await fetch(uploadUrl, {
@@ -33,6 +34,12 @@ export default function PhotosField({ reservationId, leg, photoType, value = [],
   const [error, setError] = useState(null);
   const [progress, setProgress] = useState(null); // { done, total }
   const inputRef = useRef(null);
+  const previewsRef = useRef([]);
+  useEffect(() => {
+    previewsRef.current = previews;
+  }, [previews]);
+  // Libère la mémoire des aperçus quand on quitte l'étape.
+  useEffect(() => () => previewsRef.current.forEach((u) => URL.revokeObjectURL(u)), []);
 
   async function handleFiles(e) {
     const files = Array.from(e.target.files || []);
@@ -47,21 +54,21 @@ export default function PhotosField({ reservationId, leg, photoType, value = [],
     const echouees = [];
 
     try {
-      const presignRes = await fetch(`/api/voiturier/courses/${reservationId}/${leg}/photos/presign`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: photoType,
-          files: files.map((f) => ({ filename: f.name, contentType: f.type || "application/octet-stream" })),
-        }),
-      });
-      const presignJson = await presignRes.json();
-      if (!presignRes.ok || presignJson.error) throw new Error(presignJson.error || "Erreur de préparation de l'envoi");
-      const presigned = presignJson.data;
-
       for (let i = 0; i < files.length; i += BATCH_SIZE) {
-        const batchFiles = files.slice(i, i + BATCH_SIZE);
-        const batchPresigned = presigned.slice(i, i + BATCH_SIZE);
+        const originaux = files.slice(i, i + BATCH_SIZE);
+        const batchFiles = originaux;
+
+        const presignRes = await fetch(`/api/voiturier/courses/${reservationId}/${leg}/photos/presign`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: photoType,
+            files: batchFiles.map((f) => ({ filename: f.name, contentType: f.type || "application/octet-stream" })),
+          }),
+        });
+        const presignJson = await presignRes.json();
+        if (!presignRes.ok || presignJson.error) throw new Error(presignJson.error || "Erreur de préparation de l'envoi");
+        const batchPresigned = presignJson.data;
 
         const results = await Promise.allSettled(
           batchFiles.map((file, j) => uploadWithRetry(file, batchPresigned[j].uploadUrl))
@@ -115,16 +122,21 @@ export default function PhotosField({ reservationId, leg, photoType, value = [],
           : "+ Ajouter des photos"}
       </button>
 
+      {/* Pas de galerie complète : décoder des dizaines de photos pleine taille ralentit (voire fige)
+          le téléphone. On montre seulement les dernières miniatures, et le nombre total envoyé. */}
       {previews.length > 0 && (
         <div className="grid grid-cols-4 gap-2 mt-4">
-          {previews.map((src, i) => (
+          {previews.slice(-MAX_APERCUS).map((src, i) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={i} src={src} alt="" className="w-full aspect-square object-cover rounded-lg" />
+            <img key={src} src={src} alt="" decoding="async" loading="lazy" className="w-full aspect-square object-cover rounded-lg" />
           ))}
         </div>
       )}
-      {previews.length === 0 && value.length > 0 && (
-        <p className="text-white/70 text-sm mt-3">{value.length} photo(s) déjà envoyée(s).</p>
+      {value.length > 0 && (
+        <p className="text-white/70 text-sm mt-3">
+          {value.length} photo(s) envoyée(s)
+          {previews.length > MAX_APERCUS ? ` — ${MAX_APERCUS} dernières affichées` : ""}.
+        </p>
       )}
       {error && <p className="text-white bg-black/20 rounded-lg px-3 py-2 mt-3 text-sm">{error}</p>}
     </div>

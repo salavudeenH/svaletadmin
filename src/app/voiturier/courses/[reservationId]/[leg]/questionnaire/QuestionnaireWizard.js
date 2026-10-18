@@ -53,7 +53,7 @@ function buildSteps(leg, course, answers, suggestionNumeroCle) {
     ];
   }
 
-  // Ordre : photo du compteur, photos du véhicule sur tous les côtés, voiture garée, clé au coffre.
+  // Ordre : compteur, photos sur tous les côtés, voiture garée, puis parking + clé, puis clé au coffre.
   const photoSteps = [
     {
       type: "photos",
@@ -89,8 +89,20 @@ function buildSteps(leg, course, answers, suggestionNumeroCle) {
     },
   ];
 
-  // Infos clé + parking validées : l'étape est verrouillée, il ne reste que les photos.
-  if (answers.__locked) return photoSteps;
+  // Infos clé + parking validées : l'étape est verrouillée, il ne reste que les photos pas encore
+  // faites (à la validation : la clé au coffre ; pour une course verrouillée avec l'ancien ordre :
+  // toutes celles qui manquent).
+  if (answers.__locked) {
+    const restantes =
+      answers.__restantes ||
+      photoSteps
+        .filter((s) => s.key === "photos_cle_coffre" || (course[s.key] || []).length < s.minPhotos)
+        .map((s) => s.key);
+    return photoSteps.filter((s) => restantes.includes(s.key));
+  }
+
+  const photosAvantParking = photoSteps.filter((s) => s.key !== "photos_cle_coffre");
+  const photoCleCoffre = photoSteps.filter((s) => s.key === "photos_cle_coffre");
 
   const rp = course.retour_prevu || {};
   return [
@@ -144,13 +156,14 @@ function buildSteps(leg, course, answers, suggestionNumeroCle) {
       consent:
         "En signant, j'accepte les CGV sans réserve et je reconnais confier mon véhicule à SVALET jusqu'à mon retour de voyage et autorise mon voiturier à le conduire et à le stationner.",
     },
-    ...photoSteps,
+    ...photosAvantParking,
     {
       type: "parking",
       keys: ["parking_nom", "numero_cle"],
       question: "Où avez-vous garé le véhicule ?",
       initials: [course.parking_nom || course.parking_suggere || "", course.numero_cle || suggestionNumeroCle || ""],
     },
+    ...photoCleCoffre,
   ];
 }
 
@@ -273,7 +286,7 @@ export default function QuestionnaireWizard({ reservationId, leg, course, parkin
         }
         if (!res.ok || json.error) throw new Error(json.error || "Erreur lors de l'enregistrement");
         // Verrouillage : les infos sont enregistrées, il ne reste que les photos.
-        setAnswers((prev) => ({ ...prev, __locked: true }));
+        setAnswers((prev) => ({ ...prev, __locked: true, __restantes: ["photos_cle_coffre"] }));
         setStepIndex(0);
       } catch (err) {
         setError(err.message);
