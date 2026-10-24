@@ -93,7 +93,7 @@ export default async function BeneficesPage({ searchParams }) {
         <div className="space-y-4">
           <Bloc titre="Réservations SVALET" total={revenus.reservations.total}>
             <p className="px-4 py-3 text-sm text-gray-500">
-              {revenus.reservations.nombre} réservation(s) payée(s) en {MOIS[mois - 1].toLowerCase()} — montant réellement encaissé.
+              {revenus.reservations.nombre} réservation(s) avec prise en charge en {MOIS[mois - 1].toLowerCase()} — montant réellement payé.
             </p>
           </Bloc>
 
