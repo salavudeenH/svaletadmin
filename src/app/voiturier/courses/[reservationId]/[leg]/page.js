@@ -3,6 +3,7 @@ import { valetApiFetch } from "@/lib/valetApi";
 import { User, Phone, Car, Plane, KeyRound, ParkingCircle, Luggage, Sparkles } from "lucide-react";
 import ConfirmButton from "./ConfirmButton";
 import PhotosButton from "./PhotosButton";
+import MessageButtons from "./MessageButtons";
 import { Row, Badge } from "../../../_components/Row";
 
 function fmtDateFR(d) {
@@ -156,6 +157,14 @@ export default async function VoiturierCourseDetailPage({ params }) {
           <PhotosButton label="Clé au coffre" urls={c.photos_cle_coffre_urls} />
         </div>
       )}
+
+      <MessageButtons
+        leg={c.leg}
+        heure={c.heure}
+        clientPhone={c.client.telephone}
+        valetPhone={c.valet?.telephone}
+        isManager={Boolean(moi.is_manager)}
+      />
 
       <div className="px-4 pt-6">
         {!c.confirme_le && c.valet && !estAMoi && (
